@@ -244,7 +244,16 @@ export default function MemoryStore({ allowedTypes }: { allowedTypes?: string[] 
           {/* 列表 */}
           {memories.length === 0 ? (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              暂无记忆数据
+              {singleType === 'insight' ? (
+                <div className="space-y-2">
+                  <div>暂无洞察记忆</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 max-w-xs mx-auto">
+                    多聊几轮后，系统会自动分析对话，提炼出关于你的高层洞察
+                  </div>
+                </div>
+              ) : (
+                '暂无记忆数据'
+              )}
             </div>
           ) : (
             <div className="space-y-3">

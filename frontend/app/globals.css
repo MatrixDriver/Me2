@@ -4,49 +4,50 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --background: 33 40% 97%;        /* #FBF6F0 奶茶底色 */
+    --foreground: 25 30% 20%;        /* #3D3229 暖棕文字 */
+    --card: 33 50% 99%;              /* #FFFBF7 微暖白卡片 */
+    --card-foreground: 25 30% 20%;
+    --popover: 33 50% 99%;
+    --popover-foreground: 25 30% 20%;
+    --primary: 24 60% 58%;           /* #D4885E 暖橘强调 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 30% 93%;         /* #F0E8DE 浅米色 */
+    --secondary-foreground: 25 30% 20%;
+    --muted: 30 30% 93%;
+    --muted-foreground: 25 15% 55%;  /* #9B8E82 暖灰文字 */
+    --accent: 30 30% 93%;
+    --accent-foreground: 25 30% 20%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 25% 88%;            /* #E8DFD5 暖色边框 */
+    --input: 30 30% 95%;             /* #F5EDE4 暖色输入框 */
+    --ring: 24 60% 58%;
+    --radius: 0.75rem;
+    --sidebar: 30 25% 94%;           /* #F3ECE4 暖色侧边栏 */
   }
 
   .dark {
-    --background: 220 18% 7%;        /* #121418 主背景 */
-    --foreground: 214 15% 91%;       /* #E8ECF0 主文字 */
-    --card: 220 15% 10%;             /* #181B20 卡片背景 */
-    --card-foreground: 214 15% 91%;  /* #E8ECF0 卡片文字 */
-    --popover: 220 15% 10%;
-    --popover-foreground: 214 15% 91%;
-    --primary: 217 91% 60%;          /* #3B82F6 强调色蓝 */
-    --primary-foreground: 214 15% 91%;
-    --secondary: 220 15% 14%;        /* #242830 次要背景 */
-    --secondary-foreground: 214 15% 91%;
-    --muted: 220 15% 14%;
-    --muted-foreground: 214 12% 53%; /* #7B8594 弱化文字 */
-    --accent: 220 15% 14%;
-    --accent-foreground: 214 15% 91%;
+    --background: 25 20% 12%;
+    --foreground: 30 20% 88%;
+    --card: 25 18% 15%;
+    --card-foreground: 30 20% 88%;
+    --popover: 25 18% 15%;
+    --popover-foreground: 30 20% 88%;
+    --primary: 24 60% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 25 15% 20%;
+    --secondary-foreground: 30 20% 88%;
+    --muted: 25 15% 20%;
+    --muted-foreground: 25 12% 55%;
+    --accent: 25 15% 20%;
+    --accent-foreground: 30 20% 88%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 214 15% 91%;
-    --border: 220 15% 18%;           /* #282C34 边框 */
-    --input: 220 18% 12%;            /* #1F2228 输入框背景 */
-    --ring: 217 91% 60%;
-    --sidebar: 220 18% 6%;           /* #0F1114 侧边栏背景 */
+    --destructive-foreground: 30 20% 88%;
+    --border: 25 15% 22%;
+    --input: 25 18% 14%;
+    --ring: 24 60% 58%;
+    --sidebar: 25 20% 10%;
   }
 }
 

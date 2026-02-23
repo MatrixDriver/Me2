@@ -201,7 +201,7 @@ export default function SessionSidebar({
       <div className="flex items-center gap-2 px-3 py-3 border-b border-border/30">
         <button
           onClick={onNewChat}
-          className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-[#5B7FEB]/20 to-[#4E6FDB]/20 text-[#5B7FEB] hover:from-[#5B7FEB]/30 hover:to-[#4E6FDB]/30 transition-all text-sm font-medium"
+          className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 text-primary hover:from-primary/30 hover:to-primary/20 transition-all text-sm font-medium"
         >
           <Plus className="w-4 h-4" />
           新对话
@@ -224,7 +224,7 @@ export default function SessionSidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜索会话..."
-            className="w-full pl-9 pr-8 py-1.5 rounded-lg bg-secondary/30 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[#5B7FEB]/40"
+            className="w-full pl-9 pr-8 py-1.5 rounded-lg bg-secondary/30 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
           />
           {searchQuery && (
             <button
@@ -366,7 +366,7 @@ function SessionItem({
         onClick={onSelect}
         className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all ${
           isActive
-            ? 'bg-[#5B7FEB]/15 text-[#5B7FEB]'
+            ? 'bg-primary/15 text-primary'
             : 'text-foreground/80 hover:bg-secondary/40'
         }`}
       >
@@ -383,7 +383,7 @@ function SessionItem({
               }}
               onBlur={onRename}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-secondary/50 border border-border/50 rounded px-1.5 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5B7FEB]/40"
+              className="w-full bg-secondary/50 border border-border/50 rounded px-1.5 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40"
             />
           ) : (
             <span className="truncate block">{getTitle(session)}</span>
@@ -408,7 +408,7 @@ function SessionItem({
       {menuOpen && (
         <div
           ref={menuRef}
-          className="absolute right-0 top-full mt-1 z-50 w-40 bg-[#2f3136] border border-border/50 rounded-lg shadow-xl py-1"
+          className="absolute right-0 top-full mt-1 z-50 w-40 bg-card border border-border rounded-lg shadow-xl py-1"
         >
           <button
             onClick={onStartRename}

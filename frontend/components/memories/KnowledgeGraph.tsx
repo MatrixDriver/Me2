@@ -271,7 +271,7 @@ function EChartsGraph({
       echartsInstanceRef.current.dispose();
     }
 
-    const chart = echarts.init(chartRef.current, 'dark');
+    const chart = echarts.init(chartRef.current);
     echartsInstanceRef.current = chart;
 
     const nodes = elements.nodes.map((n) => ({
@@ -288,8 +288,8 @@ function EChartsGraph({
     const edges = elements.edges.map((e) => ({
       source: e.data.source,
       target: e.data.target,
-      label: { show: true, formatter: e.data.label || '', fontSize: 10, color: '#9CA3AF' },
-      lineStyle: { color: '#4B5563', width: 1.5, curveness: 0.2 },
+      label: { show: true, formatter: e.data.label || '', fontSize: 10, color: '#9B8E82' },
+      lineStyle: { color: '#D4C8BC', width: 1.5, curveness: 0.2 },
     }));
 
     const categories = Object.entries(NODE_TYPE_COLORS)
@@ -300,7 +300,7 @@ function EChartsGraph({
       }));
 
     chart.setOption({
-      backgroundColor: 'transparent',
+      backgroundColor: '#FFFBF7',
       tooltip: {
         trigger: 'item',
         formatter: (params: any) => {
@@ -330,7 +330,7 @@ function EChartsGraph({
             show: true,
             position: 'bottom',
             fontSize: 11,
-            color: '#E5E7EB',
+            color: '#3D3229',
             formatter: '{b}',
           },
           emphasis: {
@@ -370,7 +370,7 @@ function EChartsGraph({
   return (
     <div
       ref={chartRef}
-      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-900"
+      className="w-full rounded-lg border border-border"
       style={{ height: '400px' }}
     />
   );

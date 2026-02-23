@@ -233,8 +233,8 @@ export default function ChatInterface({
 
             {!loadingHistory && messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-amber-400/20 to-rose-400/20 flex items-center justify-center mb-4 md:mb-6">
-                  <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-amber-400/60" />
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary/20 to-orange-400/20 flex items-center justify-center mb-4 md:mb-6">
+                  <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-primary/60" />
                 </div>
                 <p className="text-lg md:text-xl font-medium text-foreground/80 mb-2">开始和 Me2 聊天吧！</p>
                 <p className="text-sm text-muted-foreground/60">我会记住你说的每一句话</p>
@@ -254,8 +254,8 @@ export default function ChatInterface({
                 >
                   {message.role === 'assistant' && (
                     <div className="flex-shrink-0">
-                      <div className="w-7 h-7 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center shadow-lg border border-amber-500/10">
-                        <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-400/90" />
+                      <div className="w-7 h-7 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-primary/20 to-orange-400/20 flex items-center justify-center shadow-lg border border-primary/10">
+                        <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary/90" />
                       </div>
                     </div>
                   )}
@@ -267,14 +267,14 @@ export default function ChatInterface({
                     <div
                       className={`rounded-2xl px-3 py-2 md:px-4 md:py-2.5 backdrop-blur-sm ${
                         message.role === 'user'
-                          ? 'bg-gradient-to-br from-[#5B7FEB] to-[#4E6FDB] text-white shadow-lg shadow-blue-500/20'
-                          : 'bg-gradient-to-br from-[#2f3136] to-[#292b30] text-[#dcddde] shadow-lg shadow-black/10 border border-white/5'
+                          ? 'bg-gradient-to-br from-primary to-primary/90 text-white shadow-lg shadow-primary/20'
+                          : 'bg-card text-foreground shadow-sm border border-border/50'
                       }`}
                     >
                       {message.role === 'user' ? (
                         <p className="whitespace-pre-wrap leading-relaxed text-[14px] md:text-[15px] font-normal">{message.content}</p>
                       ) : (
-                        <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 md:prose-p:my-1.5 prose-p:leading-relaxed prose-p:text-[14px] md:prose-p:text-[15px] [&>*]:text-[#dcddde] prose-headings:text-[#e8e9ea] prose-strong:text-[#e8e9ea] prose-code:text-blue-300 prose-code:bg-black/20 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded">
+                        <div className="prose prose-sm max-w-none prose-p:my-1 md:prose-p:my-1.5 prose-p:leading-relaxed prose-p:text-[14px] md:prose-p:text-[15px] prose-headings:text-foreground prose-strong:text-foreground prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {message.content}
                           </ReactMarkdown>
@@ -304,12 +304,12 @@ export default function ChatInterface({
             {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && !messages[messages.length - 1].content && (
               <div className="flex justify-start gap-2.5 md:gap-4 animate-in fade-in duration-300">
                 <div className="flex-shrink-0">
-                  <div className="w-7 h-7 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center shadow-lg border border-amber-500/10">
-                    <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-400/90" />
+                  <div className="w-7 h-7 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-primary/20 to-orange-400/20 flex items-center justify-center shadow-lg border border-primary/10">
+                    <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary/90" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#2f3136] to-[#292b30] rounded-3xl px-5 py-3 md:px-6 md:py-4 shadow-xl shadow-black/10 border border-white/5">
-                  <Loader2 className="w-5 h-5 animate-spin text-amber-400/60" />
+                <div className="bg-card rounded-3xl px-5 py-3 md:px-6 md:py-4 shadow-sm border border-border/50">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary/60" />
                 </div>
               </div>
             )}
@@ -325,14 +325,14 @@ export default function ChatInterface({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="输入消息..."
-                className="flex-1 resize-none bg-gradient-to-br from-[#2f3136] to-[#292b30] text-[#dcddde] rounded-2xl md:rounded-3xl px-4 py-3 md:px-6 md:py-4 focus:outline-none focus:ring-2 focus:ring-[#5B7FEB]/40 focus:shadow-lg focus:shadow-blue-500/10 placeholder:text-gray-500/60 text-[14px] md:text-[15px] min-h-[44px] md:min-h-[56px] border border-white/5 transition-all"
+                className="flex-1 resize-none bg-card text-foreground rounded-2xl md:rounded-3xl px-4 py-3 md:px-6 md:py-4 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:shadow-lg focus:shadow-primary/10 placeholder:text-muted-foreground/50 text-[14px] md:text-[15px] min-h-[44px] md:min-h-[56px] border border-border/50 transition-all"
                 rows={1}
                 disabled={isLoading}
               />
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
-                className="bg-gradient-to-br from-[#5B7FEB] to-[#4E6FDB] text-white rounded-2xl md:rounded-3xl px-4 py-3 md:px-7 md:py-4 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 disabled:from-gray-700 disabled:to-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100 transition-all duration-200 flex items-center justify-center"
+                className="bg-gradient-to-br from-primary to-primary/90 text-white rounded-2xl md:rounded-3xl px-4 py-3 md:px-7 md:py-4 hover:shadow-xl hover:shadow-primary/30 hover:scale-105 disabled:from-muted disabled:to-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100 transition-all duration-200 flex items-center justify-center"
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -342,7 +342,7 @@ export default function ChatInterface({
 
         {/* Right: Debug Panel - desktop only */}
         {debugMode && (
-          <div className="hidden md:flex w-1/3 border-l border-border/30 bg-gradient-to-b from-background/50 to-background flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+          <div className="hidden md:flex w-1/3 border-l border-border/30 bg-background flex-col overflow-hidden animate-in slide-in-from-right duration-300">
             <div className="px-4 py-3 border-b border-border/30 bg-gradient-to-r from-orange-500/10 to-amber-500/10">
               <div className="flex items-center gap-2 text-orange-400">
                 <Bug className="w-4 h-4" />
@@ -353,7 +353,7 @@ export default function ChatInterface({
               {messages
                 .filter((msg) => msg.role === 'assistant' && (msg.debug_info || msg.system_prompt))
                 .map((msg, idx) => (
-                  <div key={idx} className="bg-black/20 border border-white/5 rounded-xl p-3">
+                  <div key={idx} className="bg-secondary/50 border border-border/50 rounded-xl p-3">
                     <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
                       <span className="font-mono">#{messages.indexOf(msg) + 1}</span>
                       <span>·</span>
@@ -401,7 +401,7 @@ function HistoryDebugView({
   const [showPrompt, setShowPrompt] = useState(false);
 
   return (
-    <div className="mt-3 border-t border-white/10 pt-3 space-y-3 text-xs">
+    <div className="mt-3 border-t border-border/50 pt-3 space-y-3 text-xs">
       {memoriesRecalled !== undefined && (
         <div className="flex items-center gap-2 text-purple-400/80">
           <Brain className="w-3.5 h-3.5" />
@@ -409,7 +409,7 @@ function HistoryDebugView({
         </div>
       )}
       {systemPrompt && (
-        <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+        <div className="bg-secondary/50 border border-border/50 rounded-xl p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="font-semibold text-orange-400/90">System Prompt</span>
             <button

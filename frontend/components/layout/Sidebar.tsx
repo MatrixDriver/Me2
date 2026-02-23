@@ -3,6 +3,7 @@
 import { MessageCircle, Database, Settings } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import UserMenu from './UserMenu';
+import VersionBadge from '@/components/VersionBadge';
 
 export default function Sidebar() {
   return (
@@ -22,8 +23,11 @@ export default function Sidebar() {
       </nav>
 
       {/* User */}
-      <div className="px-3 py-3 border-t border-border">
+      <div className="px-3 py-3 border-t border-border space-y-2">
         <UserMenu />
+        <div className="px-1">
+          <VersionBadge />
+        </div>
       </div>
     </aside>
   );

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import VersionBadge from '@/components/VersionBadge';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
@@ -97,6 +98,11 @@ export default function SettingsPage() {
         </div>
 
         {/* 确认 Modal */}
+        {/* 版本信息 */}
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <VersionBadge />
+        </div>
+
         {showModal && (
           <div
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"

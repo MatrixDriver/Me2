@@ -182,6 +182,16 @@ async def root():
     }
 
 
+@app.get("/api/v1/version")
+async def version():
+    """版本信息"""
+    import neuromemory
+    return {
+        "app": settings.APP_VERSION,
+        "neuromemory": getattr(neuromemory, "__version__", "unknown"),
+    }
+
+
 @app.get("/health")
 async def health():
     """健康检查"""

@@ -30,6 +30,7 @@ export default function ChatInterface({
   const [debugMode, setDebugMode] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isStreamingRef = useRef(false);
 
   const sessionId = externalSessionId ?? internalSessionId;
 
@@ -65,6 +66,8 @@ export default function ChatInterface({
 
   useEffect(() => {
     if (externalSessionId) {
+      // Skip loading history while streaming to avoid overwriting in-progress messages
+      if (isStreamingRef.current) return;
       loadHistory(externalSessionId);
     } else {
       setMessages([]);
@@ -101,6 +104,7 @@ export default function ChatInterface({
       let memoriesRecalled = 0;
       let recalledSummaries: RecalledMemory[] = [];
 
+      isStreamingRef.current = true;
       for await (const chunk of apiClient.chatStream(messageToSend, sessionId, debugMode)) {
         if (chunk.type === 'token') {
           fullResponse += chunk.content || '';
@@ -151,6 +155,7 @@ export default function ChatInterface({
         return newMessages;
       });
     } finally {
+      isStreamingRef.current = false;
       setIsLoading(false);
     }
   };

@@ -74,40 +74,40 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
   };
 
   return (
-    <div className="mt-3 border-t border-white/10 pt-3 space-y-3">
+    <div className="mt-2 border-t border-white/5 pt-2 space-y-2">
       {/* 性能摘要 */}
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 bg-orange-500/10 px-2 py-1 rounded-lg text-orange-400/80">
-            <Clock className="w-3.5 h-3.5" />
+      <div className="flex items-center justify-between text-[11px]">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <Clock className="w-3 h-3" />
             {totalTime.toFixed(0)}ms
           </span>
           {debugInfo.history_count !== undefined && (
-            <span className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-1 rounded-lg text-blue-400/80">
-              <MessageSquare className="w-3.5 h-3.5" />
-              {debugInfo.history_count} 条历史
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <MessageSquare className="w-3 h-3" />
+              {debugInfo.history_count}条
             </span>
           )}
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 hover:text-orange-300 transition-colors px-2 py-1 rounded-lg hover:bg-orange-500/10 text-orange-400/80"
+          className="flex items-center gap-0.5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
         >
-          {expanded ? '收起' : '性能详情'}
-          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {expanded ? '收起' : '详情'}
+          {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </button>
       </div>
 
       {/* 展开的性能详情 */}
       {expanded && (
-        <div className="space-y-3 text-xs animate-in slide-in-from-top-2 duration-300">
-          {/* 性能分解 - 可视化时间线 */}
-          <div className="bg-black/20 border border-white/5 rounded-xl p-3 backdrop-blur-sm">
-            <div className="font-semibold mb-3 text-orange-400/90 flex items-center gap-2">
-              <Activity className="w-4 h-4" />
-              性能分解时间线
+        <div className="space-y-2 text-[11px] animate-in slide-in-from-top-2 duration-200">
+          {/* 性能分解 */}
+          <div className="glass-card rounded-lg p-2">
+            <div className="text-[10px] font-medium mb-1.5 text-muted-foreground/70 flex items-center gap-1">
+              <Activity className="w-3 h-3" />
+              耗时分解
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {performanceSteps.map((step) => {
                 const time = timings[step.key as keyof typeof timings];
                 if (!time) return null;
@@ -118,19 +118,18 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
 
                 return (
                   <div key={step.key}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`flex items-center gap-1.5 ${isSlowest ? 'text-red-400 font-semibold' : 'text-gray-400'}`}>
-                        <step.icon className="w-3 h-3" />
+                    <div className="flex items-center justify-between">
+                      <span className={`flex items-center gap-1 ${isSlowest ? 'text-red-400/80' : 'text-muted-foreground/60'}`}>
                         {step.label}
-                        {isSlowest && <span className="text-[10px] bg-red-500/20 px-1.5 py-0.5 rounded text-red-400">瓶颈</span>}
+                        {isSlowest && <span className="text-[9px] text-red-400/60">慢</span>}
                       </span>
-                      <span className={`font-mono ${isSlowest ? 'text-red-400 font-semibold' : 'text-gray-400'}`}>
-                        {ms.toFixed(1)}ms ({percentage.toFixed(1)}%)
+                      <span className={`font-mono text-[10px] ${isSlowest ? 'text-red-400/80' : 'text-muted-foreground/50'}`}>
+                        {ms.toFixed(0)}ms
                       </span>
                     </div>
-                    <div className="w-full bg-black/30 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
                       <div
-                        className={`h-full ${getColorClass(step.color)} transition-all duration-500 ${isSlowest ? 'animate-pulse' : ''}`}
+                        className={`h-full ${getColorClass(step.color)} opacity-60 transition-all duration-500`}
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -139,50 +138,46 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
               })}
             </div>
 
-            {/* 总计 */}
-            <div className="mt-3 pt-3 border-t border-white/5">
-              <div className="flex items-center justify-between font-semibold">
-                <span className="text-orange-400">总耗时</span>
-                <span className="text-orange-400 font-mono">{totalTime.toFixed(1)}ms</span>
+            <div className="mt-1.5 pt-1.5 border-t border-white/5">
+              <div className="flex items-center justify-between text-muted-foreground/70">
+                <span>总计</span>
+                <span className="font-mono text-[10px]">{totalTime.toFixed(0)}ms</span>
               </div>
             </div>
           </div>
 
           {/* 完整Prompt */}
-          <div className="bg-black/20 border border-white/5 rounded-xl p-3 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-semibold text-orange-400/90 flex items-center gap-2">
-                <Code className="w-4 h-4" />
-                完整对话Prompt
+          <div className="glass-card rounded-lg p-2">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-medium text-muted-foreground/70 flex items-center gap-1">
+                <Code className="w-3 h-3" />
+                Prompt
                 {debugInfo.message_count && (
-                  <span className="text-[10px] bg-blue-500/20 px-1.5 py-0.5 rounded text-blue-400">
-                    {debugInfo.message_count} 条消息
-                  </span>
+                  <span className="text-muted-foreground/40">({debugInfo.message_count}条)</span>
                 )}
               </div>
               <button
                 onClick={() => setShowPrompt(!showPrompt)}
-                className="text-orange-400/80 hover:text-orange-300 transition-colors px-2 py-1 rounded-lg hover:bg-orange-500/10 text-[11px]"
+                className="text-muted-foreground/50 hover:text-muted-foreground transition-colors text-[10px]"
               >
                 {showPrompt ? '隐藏' : '查看'}
               </button>
             </div>
 
             {showPrompt && debugInfo.messages && (
-              <div className="mt-2 space-y-2 max-h-96 overflow-y-auto">
+              <div className="mt-1.5 space-y-1 max-h-80 overflow-y-auto">
                 {debugInfo.messages.map((msg, idx) => (
-                  <div key={idx} className="bg-black/30 rounded-lg p-2.5 border border-white/5">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                        msg.role === 'system' ? 'bg-purple-500/20 text-purple-400' :
-                        msg.role === 'user' ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-green-500/20 text-green-400'
+                  <div key={idx} className="bg-white/5 rounded p-1.5">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className={`text-[9px] font-medium px-1 py-0.5 rounded ${
+                        msg.role === 'system' ? 'bg-purple-500/15 text-purple-400/70' :
+                        msg.role === 'user' ? 'bg-blue-500/15 text-blue-400/70' :
+                        'bg-green-500/15 text-green-400/70'
                       }`}>
-                        {msg.role.toUpperCase()}
+                        {msg.role}
                       </span>
-                      <span className="text-[10px] text-gray-500">第 {idx + 1} 条</span>
                     </div>
-                    <pre className="whitespace-pre-wrap text-gray-300 font-mono text-[11px] leading-relaxed">
+                    <pre className="whitespace-pre-wrap text-muted-foreground/60 font-mono text-[10px] leading-relaxed">
                       {msg.content}
                     </pre>
                   </div>
@@ -193,23 +188,23 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
 
           {/* 模型参数 */}
           {debugInfo.model && (
-            <div className="bg-black/20 border border-white/5 rounded-xl p-3 backdrop-blur-sm">
-              <div className="font-semibold mb-2 text-orange-400/90 flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                模型参数
+            <div className="glass-card rounded-lg p-2">
+              <div className="text-[10px] font-medium mb-1 text-muted-foreground/70 flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                模型
               </div>
-              <div className="grid grid-cols-3 gap-2 text-gray-400">
+              <div className="grid grid-cols-3 gap-1.5 text-muted-foreground/60">
                 <div>
-                  <div className="text-[10px] text-gray-500">模型</div>
-                  <div className="font-mono text-[11px]">{debugInfo.model}</div>
+                  <div className="text-[9px] text-muted-foreground/40">Model</div>
+                  <div className="font-mono text-[10px]">{debugInfo.model}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-gray-500">Temperature</div>
-                  <div className="font-mono text-[11px]">{debugInfo.temperature}</div>
+                  <div className="text-[9px] text-muted-foreground/40">Temp</div>
+                  <div className="font-mono text-[10px]">{debugInfo.temperature}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-gray-500">Max Tokens</div>
-                  <div className="font-mono text-[11px]">{debugInfo.max_tokens}</div>
+                  <div className="text-[9px] text-muted-foreground/40">Tokens</div>
+                  <div className="font-mono text-[10px]">{debugInfo.max_tokens}</div>
                 </div>
               </div>
             </div>

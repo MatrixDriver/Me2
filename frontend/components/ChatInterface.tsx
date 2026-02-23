@@ -207,13 +207,13 @@ export default function ChatInterface({
           )}
           <button
             onClick={() => setDebugMode(!debugMode)}
-            className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all ${
               debugMode
-                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                ? 'glass-strong text-primary'
+                : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-white/5'
             }`}
           >
-            <Bug className="w-4 h-4" />
+            <Bug className="w-3.5 h-3.5" />
             调试
           </button>
         </div>
@@ -343,20 +343,26 @@ export default function ChatInterface({
         {/* Right: Debug Panel - desktop only */}
         {debugMode && (
           <div className="hidden md:flex w-1/3 border-l border-white/5 glass flex-col overflow-hidden animate-in slide-in-from-right duration-300">
-            <div className="px-4 py-3 border-b border-border/30 bg-gradient-to-r from-orange-500/10 to-amber-500/10">
-              <div className="flex items-center gap-2 text-orange-400">
-                <Bug className="w-4 h-4" />
-                <span className="font-semibold text-sm">调试面板</span>
+            <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Bug className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">调试</span>
               </div>
+              <button
+                onClick={() => setDebugMode(false)}
+                className="text-muted-foreground/50 hover:text-muted-foreground text-xs px-1.5 py-0.5 rounded hover:bg-white/5 transition-colors"
+              >
+                关闭
+              </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
               {messages
                 .filter((msg) => msg.role === 'assistant' && (msg.debug_info || msg.system_prompt))
                 .map((msg, idx) => (
-                  <div key={idx} className="bg-secondary/50 border border-border/50 rounded-xl p-3">
-                    <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                  <div key={idx} className="glass-card rounded-lg p-2">
+                    <div className="text-[11px] text-muted-foreground/70 mb-1.5 flex items-center gap-1.5">
                       <span className="font-mono">#{messages.indexOf(msg) + 1}</span>
-                      <span>·</span>
+                      <span className="opacity-40">·</span>
                       <span>
                         {new Date(msg.timestamp!).toLocaleTimeString('zh-CN', {
                           hour: '2-digit',
@@ -364,7 +370,7 @@ export default function ChatInterface({
                         })}
                       </span>
                       {!msg.debug_info && (
-                        <span className="text-[10px] bg-gray-500/20 px-1.5 py-0.5 rounded text-gray-400">历史</span>
+                        <span className="text-[10px] bg-white/5 px-1 py-0.5 rounded text-muted-foreground/50">历史</span>
                       )}
                     </div>
                     {msg.debug_info ? (
@@ -378,9 +384,9 @@ export default function ChatInterface({
                   </div>
                 ))}
               {messages.filter((msg) => msg.role === 'assistant' && (msg.debug_info || msg.system_prompt)).length === 0 && (
-                <div className="text-center text-muted-foreground/50 mt-12">
-                  <Bug className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">开始对话后将显示调试信息</p>
+                <div className="text-center text-muted-foreground/30 mt-8">
+                  <Bug className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-xs">对话后显示调试信息</p>
                 </div>
               )}
             </div>

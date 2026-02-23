@@ -484,6 +484,10 @@ async def search_memories(
             limit=request.limit,
             memory_type=request.memory_type,
         )
+        # Use vector_score (cosine similarity 0~1) for display; rrf_score is too small
+        for m in memories:
+            if "vector_score" in m:
+                m["score"] = m["vector_score"]
         filtered = [m for m in memories if m.get("score", 0) >= request.threshold]
         return {"memories": filtered, "query": request.query, "count": len(filtered)}
     except Exception as e:

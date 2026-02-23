@@ -115,7 +115,7 @@ class ConversationEngine:
                 system_prompt=system_prompt,
                 recalled_memories=[{
                     "content": m["content"],
-                    "score": m.get("score", 0),
+                    "score": m.get("relevance", 0) or m.get("score", 0),
                     "memory_type": m.get("memory_type", ""),
                     "created_at": m.get("created_at").isoformat() if m.get("created_at") else None,
                     "metadata": m.get("metadata", {})
@@ -361,7 +361,7 @@ class ConversationEngine:
                 system_prompt=system_prompt,
                 recalled_memories=[{
                     "content": m["content"],
-                    "score": m.get("score", 0),
+                    "score": m.get("relevance", 0) or m.get("score", 0),
                     "memory_type": m.get("memory_type", ""),
                     "created_at": m.get("created_at").isoformat() if m.get("created_at") else None,
                     "metadata": m.get("metadata", {})
@@ -400,7 +400,7 @@ class ConversationEngine:
             recalled_summaries = [
                 {
                     "content": m.get("content", "")[:100],
-                    "score": round(m.get("score", 0), 2),
+                    "score": round(m.get("relevance", 0) or m.get("score", 0), 4),
                     "memory_type": m.get("memory_type"),
                     "source": m.get("source"),
                 }

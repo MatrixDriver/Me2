@@ -40,13 +40,12 @@ class ConversationEngine:
         event_after, event_before = temporal.extract_time_range(message)
         _decay = DEFAULT_DECAY_RATE
 
-        # 3. 并行搜索
+        # 3. 并行搜索（去掉 conversation 搜索，prompt 未使用）
         t0 = time.time()
         coros = [
             nm._fetch_vector_memories(
                 user_id, message, 20, query_embedding, event_after, event_before, _decay,
             ),
-            nm._search_conversations(user_id, message, 20, query_embedding=query_embedding),
             nm._fetch_user_profile(user_id),
         ]
         if nm._graph_enabled:
@@ -56,11 +55,10 @@ class ConversationEngine:
         recall_timings['parallel_search'] = time.time() - t0
 
         vector_results = results[0] if not isinstance(results[0], Exception) else []
-        conversation_results = results[1] if not isinstance(results[1], Exception) else []
-        user_profile = results[2] if not isinstance(results[2], Exception) else {}
+        user_profile = results[1] if not isinstance(results[1], Exception) else {}
         graph_results = []
-        if nm._graph_enabled and len(results) > 3:
-            graph_results = results[3] if not isinstance(results[3], Exception) else []
+        if nm._graph_enabled and len(results) > 2:
+            graph_results = results[2] if not isinstance(results[2], Exception) else []
 
         # 4. 合并去重
         t0 = time.time()
@@ -82,9 +80,7 @@ class ConversationEngine:
         ]
         recall_timings['merge'] = time.time() - t0
 
-        # 记录子阶段计时
         recall_timings['vector_count'] = len(vector_results)
-        recall_timings['conversation_count'] = len(conversation_results)
         recall_timings['graph_count'] = len(graph_results)
 
         if timings is not None:

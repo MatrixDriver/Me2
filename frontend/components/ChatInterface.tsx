@@ -170,7 +170,7 @@ export default function ChatInterface({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 md:px-6 py-2.5 md:py-3.5 border-b border-border/30 bg-gradient-to-b from-background to-background/50 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 flex items-center justify-between px-3 md:px-6 py-2.5 md:py-3.5 border-b border-border/30 bg-background backdrop-blur-sm">
         <div className="flex items-center gap-2 md:gap-3">
           {/* Mobile: sidebar toggle */}
           {onOpenSidebar && (

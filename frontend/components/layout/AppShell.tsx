@@ -21,7 +21,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // ProtectedRoute will handle the actual redirect if not authenticated
   if (loading) {
     return (
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-[100dvh] overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-hidden flex flex-col pb-14 md:pb-0">
           {children}
@@ -38,7 +38,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   // Authenticated: show full layout
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-[100dvh] overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-hidden flex flex-col pb-14 md:pb-0">
         {children}

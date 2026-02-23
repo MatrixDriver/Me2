@@ -140,14 +140,18 @@ class ConversationEngine:
             await db.commit()
             timings['save_to_db'] = time.time() - step_start
 
-            # === 7. 同步到 NeuroMemory ===
-            step_start = time.time()
-            await nm.conversations.add_message(
-                user_id=user_id,
-                role="user",
-                content=message
-            )
-            timings['sync_neuromemory'] = time.time() - step_start
+            # === 7. 异步同步到 NeuroMemory（不阻塞响应）===
+            async def _sync_neuromemory():
+                try:
+                    await nm.conversations.add_message(
+                        user_id=user_id,
+                        role="user",
+                        content=message
+                    )
+                except Exception as e:
+                    logger.error(f"NeuroMemory 同步失败: {e}", exc_info=True)
+            asyncio.create_task(_sync_neuromemory())
+            timings['sync_neuromemory'] = 0  # 异步执行，不计入响应时间
 
             timings['total'] = time.time() - start_time
             logger.info(f"对话处理完成: 总耗时: {timings['total']:.3f}s")
@@ -386,13 +390,17 @@ class ConversationEngine:
             await db.commit()
             timings['save_to_db'] = time.time() - step_start
 
-            step_start = time.time()
-            await nm.conversations.add_message(
-                user_id=user_id,
-                role="user",
-                content=message
-            )
-            timings['sync_neuromemory'] = time.time() - step_start
+            # 异步同步到 NeuroMemory（不阻塞响应）
+            async def _sync_neuromemory():
+                try:
+                    await nm.conversations.add_message(
+                        user_id=user_id,
+                        role="user",
+                        content=message
+                    )
+                except Exception as e:
+                    logger.error(f"NeuroMemory 同步失败: {e}", exc_info=True)
+            asyncio.create_task(_sync_neuromemory())
 
             timings['total'] = time.time() - start_time
 

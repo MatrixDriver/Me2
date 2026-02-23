@@ -145,18 +145,12 @@ app = FastAPI(
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-ALLOWED_ORIGINS = set(settings.ALLOWED_ORIGINS)
-
 class CORSHandler(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        origin = request.headers.get("origin", "")
-
         # OPTIONS 预检请求
         if request.method == "OPTIONS":
             response = Response(status_code=200)
-            if origin in ALLOWED_ORIGINS:
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
             response.headers["Access-Control-Allow-Headers"] = "content-type, authorization"
             response.headers["Access-Control-Max-Age"] = "3600"
@@ -164,10 +158,8 @@ class CORSHandler(BaseHTTPMiddleware):
 
         # 正常请求
         response = await call_next(request)
-        if origin in ALLOWED_ORIGINS:
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "*"
         return response
 
 app.add_middleware(CORSHandler)

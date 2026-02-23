@@ -18,18 +18,79 @@ class ConversationEngine:
         """初始化对话引擎"""
         self.llm = LLMClient()
 
-    async def _recall_memories(self, nm, user_id: str, message: str):
+    async def _recall_memories(self, nm, user_id: str, message: str, timings: dict | None = None):
         """统一的记忆召回逻辑（非流式和流式共用）
 
         遵循 NeuroMemory 最佳实践：
-        - 一次 recall() 获取所有上下文（merged + profile + graph）
+        - 手动拆分 recall 步骤以获取子阶段计时
         - merged 已包含 fact/episodic/insight，无需单独 search
         """
-        recall_result = await nm.recall(user_id=user_id, query=message, limit=20)
-        memories = recall_result["merged"]
-        graph_context = recall_result.get("graph_context", [])
-        user_profile = recall_result.get("user_profile", {})
-        return memories, graph_context, user_profile
+        from neuromemory.services.search import DEFAULT_DECAY_RATE
+        from neuromemory.services.temporal import TemporalExtractor
+
+        recall_timings = {}
+
+        # 1. Embedding
+        t0 = time.time()
+        query_embedding = await nm._cached_embed(message)
+        recall_timings['embedding'] = time.time() - t0
+
+        # 2. 时间解析
+        temporal = TemporalExtractor()
+        event_after, event_before = temporal.extract_time_range(message)
+        _decay = DEFAULT_DECAY_RATE
+
+        # 3. 并行搜索
+        t0 = time.time()
+        coros = [
+            nm._fetch_vector_memories(
+                user_id, message, 20, query_embedding, event_after, event_before, _decay,
+            ),
+            nm._search_conversations(user_id, message, 20, query_embedding=query_embedding),
+            nm._fetch_user_profile(user_id),
+        ]
+        if nm._graph_enabled:
+            coros.append(nm._fetch_graph_memories(user_id, message, 20))
+
+        results = await asyncio.gather(*coros, return_exceptions=True)
+        recall_timings['parallel_search'] = time.time() - t0
+
+        vector_results = results[0] if not isinstance(results[0], Exception) else []
+        conversation_results = results[1] if not isinstance(results[1], Exception) else []
+        user_profile = results[2] if not isinstance(results[2], Exception) else {}
+        graph_results = []
+        if nm._graph_enabled and len(results) > 3:
+            graph_results = results[3] if not isinstance(results[3], Exception) else []
+
+        # 4. 合并去重
+        t0 = time.time()
+        recall_result = nm._build_recall_result if hasattr(nm, '_build_recall_result') else None
+        # 手动合并（与 nm.recall 逻辑一致）
+        seen_contents: set = set()
+        merged = []
+        for r in vector_results:
+            content = r.get("content", "")
+            if content not in seen_contents:
+                seen_contents.add(content)
+                entry = {**r, "source": "vector"}
+                merged.append(entry)
+
+        graph_context = [
+            f"{r.get('subject')} → {r.get('relation')} → {r.get('object')}"
+            for r in graph_results
+            if r.get("subject") and r.get("relation") and r.get("object")
+        ]
+        recall_timings['merge'] = time.time() - t0
+
+        # 记录子阶段计时
+        recall_timings['vector_count'] = len(vector_results)
+        recall_timings['conversation_count'] = len(conversation_results)
+        recall_timings['graph_count'] = len(graph_results)
+
+        if timings is not None:
+            timings['recall_detail'] = recall_timings
+
+        return merged[:20], graph_context, user_profile
 
     async def chat(
         self,
@@ -76,7 +137,7 @@ class ConversationEngine:
             # === 3. 召回记忆（一次 recall 获取所有上下文）===
             step_start = time.time()
             memories, graph_context, user_profile = await self._recall_memories(
-                nm, user_id, message
+                nm, user_id, message, timings=timings
             )
             timings['recall_memories'] = time.time() - step_start
             logger.info(f"召回 {len(memories)} 条记忆 + {len(graph_context)} 条图谱")
@@ -320,7 +381,7 @@ class ConversationEngine:
             step_start = time.time()
             try:
                 memories, graph_context, user_profile = await self._recall_memories(
-                    nm, user_id, message
+                    nm, user_id, message, timings=timings
                 )
             except Exception as e:
                 logger.warning(f"记忆召回失败: {e}")

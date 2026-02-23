@@ -8,11 +8,6 @@ import {
   MessageCircle,
   Database,
   MoreHorizontal,
-  User,
-  Upload,
-  Bell,
-  Brain,
-  Image,
   LogOut,
   X,
   Settings,
@@ -31,11 +26,6 @@ export default function MobileNav() {
     }`;
 
   const drawerItems = [
-    { href: '/profile', icon: User, label: '画像' },
-    { href: '/import', icon: Upload, label: '导入' },
-    { href: '/proactive', icon: Bell, label: '关心' },
-    { href: '/analysis', icon: Brain, label: '分析' },
-    { href: '/images', icon: Image, label: '图片' },
     { href: '/settings', icon: Settings, label: '设置' },
   ];
 

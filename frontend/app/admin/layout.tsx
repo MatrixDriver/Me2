@@ -1,0 +1,60 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { LayoutDashboard, Users, Activity, ArrowLeft } from 'lucide-react';
+import AdminRoute from '@/components/admin/AdminRoute';
+
+const NAV_ITEMS = [
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/system', label: 'System', icon: Activity },
+];
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href);
+
+  return (
+    <AdminRoute>
+      <div className="h-screen flex flex-col">
+        {/* Top nav */}
+        <header className="glass border-b border-white/5 px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Me2
+            </Link>
+            <span className="text-foreground font-semibold">Admin</span>
+          </div>
+          <nav className="flex items-center gap-1">
+            {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  isActive(href, exact)
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {children}
+        </main>
+      </div>
+    </AdminRoute>
+  );
+}

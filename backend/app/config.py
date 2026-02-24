@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.2.0"
     DEBUG: bool = True
     SECRET_KEY: str = "change-me-in-production"
+    ADMIN_DEFAULT_PASSWORD: str = "change-me-in-production"
 
     # Database (Me2 用户表 + NeuroMemory 共用)
     # Railway 提供 postgresql://... 格式，需要转为 postgresql+asyncpg://...

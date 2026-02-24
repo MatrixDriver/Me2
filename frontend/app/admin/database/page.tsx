@@ -321,7 +321,7 @@ export default function DatabasePage() {
                   ))}
                 </div>
                 {confirmAction.type === 'reset' && (
-                  <p className="text-xs text-muted-foreground">默认 admin 账号已重建（admin / Me2Admin@2026）</p>
+                  <p className="text-xs text-muted-foreground">默认 admin 账号已重建（密码为环境变量 ADMIN_DEFAULT_PASSWORD）</p>
                 )}
                 <button
                   onClick={closeConfirm}

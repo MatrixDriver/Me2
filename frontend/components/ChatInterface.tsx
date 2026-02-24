@@ -331,7 +331,6 @@ export default function ChatInterface({
                 placeholder="输入消息..."
                 className="flex-1 resize-none bg-transparent text-foreground focus:outline-none placeholder:text-muted-foreground/50 text-[14px] md:text-[15px] min-h-[28px] md:min-h-[32px] max-h-[120px] py-1.5 md:py-2 px-2 md:px-3"
                 rows={1}
-                disabled={isLoading}
               />
               <button
                 onClick={handleSend}

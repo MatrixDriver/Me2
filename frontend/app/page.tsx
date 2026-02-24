@@ -8,7 +8,9 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api-client';
 
-const STORAGE_KEY = 'me2_current_session';
+function getStorageKey(uid: string | null) {
+  return uid ? `me2_current_session_${uid}` : 'me2_current_session';
+}
 
 export default function Home() {
   const { userId } = useAuth();
@@ -16,17 +18,20 @@ export default function Home() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Restore session from localStorage on mount
+  // Restore session from localStorage on mount / user change
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const key = getStorageKey(userId);
+    const saved = localStorage.getItem(key);
     if (saved) {
       setCurrentSessionId(saved);
+    } else {
+      setCurrentSessionId(undefined);
     }
-  }, []);
+  }, [userId]);
 
   const handleSessionChange = useCallback(async (sessionId: string, isNew: boolean) => {
     setCurrentSessionId(sessionId);
-    localStorage.setItem(STORAGE_KEY, sessionId);
+    localStorage.setItem(getStorageKey(userId), sessionId);
 
     if (isNew) {
       try {
@@ -41,15 +46,15 @@ export default function Home() {
 
   const handleSelectSession = useCallback((sessionId: string) => {
     setCurrentSessionId(sessionId);
-    localStorage.setItem(STORAGE_KEY, sessionId);
+    localStorage.setItem(getStorageKey(userId), sessionId);
     setMobileSidebarOpen(false);
-  }, []);
+  }, [userId]);
 
   const handleNewChat = useCallback(() => {
     setCurrentSessionId(undefined);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(getStorageKey(userId));
     setMobileSidebarOpen(false);
-  }, []);
+  }, [userId]);
 
   return (
     <ProtectedRoute>

@@ -46,17 +46,34 @@ async def lifespan(app: FastAPI):
     logger.info("📦 初始化数据库...")
     await init_db()
 
-    # 1.5 确保 is_admin 列存在（create_all 不会给已有表加新列）
+    # 1.5 数据库迁移：补齐缺失的列（create_all 不会给已有表加新列）
     try:
         from sqlalchemy import text
         from app.db.database import engine
+        migrations = [
+            # users 表
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE NOT NULL",
+            # emotion_profiles 表 (neuromemory 0.6.0 新增列)
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS last_reflected_at TIMESTAMPTZ",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_period VARCHAR(50)",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_valence FLOAT",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_arousal FLOAT",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_updated_at TIMESTAMPTZ",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS valence_avg FLOAT",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS arousal_avg FLOAT",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS emotion_triggers JSONB",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS source_memory_ids UUID[]",
+            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS source_count INTEGER",
+        ]
         async with engine.begin() as conn:
-            await conn.execute(text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE NOT NULL"
-            ))
-        logger.info("✅ is_admin 列已就绪")
+            for sql in migrations:
+                try:
+                    await conn.execute(text(sql))
+                except Exception:
+                    pass  # 表可能不存在，跳过
+        logger.info("✅ 数据库迁移完成")
     except Exception as e:
-        logger.warning(f"⚠️  检查 is_admin 列失败: {e}")
+        logger.warning(f"⚠️  数据库迁移失败: {e}")
 
     # 1.6 确保默认 admin 账号存在
     try:

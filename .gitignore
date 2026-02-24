@@ -41,3 +41,6 @@ htmlcov/
 # Database
 *.db
 postgres-data/
+
+# Worktrees
+.worktrees/

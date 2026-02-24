@@ -17,6 +17,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // Admin pages: independent layout, no sidebar
+  if (pathname.startsWith('/admin')) {
+    return <>{children}</>;
+  }
+
   // Loading state: show with sidebar layout to prevent flash
   // ProtectedRoute will handle the actual redirect if not authenticated
   if (loading) {

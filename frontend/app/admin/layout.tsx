@@ -6,9 +6,9 @@ import { LayoutDashboard, Users, Activity, ArrowLeft } from 'lucide-react';
 import AdminRoute from '@/components/admin/AdminRoute';
 
 const NAV_ITEMS = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/system', label: 'System', icon: Activity },
+  { href: '/admin', label: '仪表盘', icon: LayoutDashboard, exact: true },
+  { href: '/admin/users', label: '用户', icon: Users },
+  { href: '/admin/system', label: '系统', icon: Activity },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +20,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminRoute>
       <div className="h-screen flex flex-col">
-        {/* Top nav */}
         <header className="glass border-b border-white/5 px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link
@@ -30,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <ArrowLeft className="w-4 h-4" />
               Me2
             </Link>
-            <span className="text-foreground font-semibold">Admin</span>
+            <span className="text-foreground font-semibold">管理后台</span>
           </div>
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => (
@@ -50,7 +49,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
         </header>
 
-        {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>

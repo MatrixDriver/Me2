@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import Pagination from '@/components/Pagination';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const PAGE_SIZE = 20;
@@ -28,8 +27,7 @@ function getAuthHeaders(): Record<string, string> {
 
 function formatDate(iso: string | null): string {
   if (!iso) return '-';
-  const d = new Date(iso);
-  return d.toLocaleDateString('zh-CN', {
+  return new Date(iso).toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -38,8 +36,7 @@ function formatDate(iso: string | null): string {
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return '-';
-  const d = new Date(iso);
-  return d.toLocaleString('zh-CN', {
+  return new Date(iso).toLocaleString('zh-CN', {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -66,8 +63,8 @@ export default function UsersListPage() {
       );
       if (res.ok) {
         const data = await res.json();
-        setUsers(data.items || data.users);
-        setTotal(data.total);
+        setUsers(data.items || data.users || []);
+        setTotal(data.total || 0);
       }
     } catch (e) {
       console.error('Failed to load users:', e);
@@ -119,8 +116,8 @@ export default function UsersListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Users</h1>
-        <span className="text-sm text-muted-foreground">{total} total</span>
+        <h1 className="text-2xl font-bold text-foreground">用户管理</h1>
+        <span className="text-sm text-muted-foreground">共 {total} 人</span>
       </div>
 
       <div className="glass-card rounded-xl overflow-hidden">
@@ -128,27 +125,13 @@ export default function UsersListPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5">
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">
-                  Username
-                </th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">
-                  Email
-                </th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">
-                  Registered
-                </th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">
-                  Last Active
-                </th>
-                <th className="text-right px-4 py-3 text-muted-foreground font-medium">
-                  Sessions
-                </th>
-                <th className="text-right px-4 py-3 text-muted-foreground font-medium">
-                  Messages
-                </th>
-                <th className="text-center px-4 py-3 text-muted-foreground font-medium">
-                  Admin
-                </th>
+                <th className="text-left px-4 py-3 text-muted-foreground font-medium">用户名</th>
+                <th className="text-left px-4 py-3 text-muted-foreground font-medium">邮箱</th>
+                <th className="text-left px-4 py-3 text-muted-foreground font-medium">注册时间</th>
+                <th className="text-left px-4 py-3 text-muted-foreground font-medium">最后活跃</th>
+                <th className="text-right px-4 py-3 text-muted-foreground font-medium">会话</th>
+                <th className="text-right px-4 py-3 text-muted-foreground font-medium">消息</th>
+                <th className="text-center px-4 py-3 text-muted-foreground font-medium">角色</th>
               </tr>
             </thead>
             <tbody>
@@ -167,26 +150,14 @@ export default function UsersListPage() {
                         {user.username}
                       </button>
                       {isSelf && (
-                        <span className="ml-2 text-xs text-muted-foreground/60">
-                          (you)
-                        </span>
+                        <span className="ml-2 text-xs text-muted-foreground/60">(我)</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {user.email || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(user.created_at)}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatDateTime(user.last_login)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-foreground tabular-nums">
-                      {user.session_count}
-                    </td>
-                    <td className="px-4 py-3 text-right text-foreground tabular-nums">
-                      {user.message_count}
-                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{user.email || '-'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDate(user.created_at)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDateTime(user.last_login)}</td>
+                    <td className="px-4 py-3 text-right text-foreground tabular-nums">{user.session_count}</td>
+                    <td className="px-4 py-3 text-right text-foreground tabular-nums">{user.message_count}</td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleToggleAdmin(user)}
@@ -202,10 +173,10 @@ export default function UsersListPage() {
                         }`}
                         title={
                           isSelf
-                            ? 'Cannot change your own admin status'
+                            ? '不能修改自己的管理员状态'
                             : user.is_admin
-                              ? 'Remove admin'
-                              : 'Make admin'
+                              ? '移除管理员'
+                              : '设为管理员'
                         }
                       >
                         {togglingId === user.id ? (
@@ -215,7 +186,7 @@ export default function UsersListPage() {
                         ) : (
                           <ShieldOff className="w-3 h-3" />
                         )}
-                        {user.is_admin ? 'Admin' : 'User'}
+                        {user.is_admin ? '管理员' : '用户'}
                       </button>
                     </td>
                   </tr>
@@ -223,11 +194,8 @@ export default function UsersListPage() {
               })}
               {users.length === 0 && !loading && (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-8 text-center text-muted-foreground"
-                  >
-                    No users found
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    暂无用户
                   </td>
                 </tr>
               )}
@@ -236,13 +204,27 @@ export default function UsersListPage() {
         </div>
       </div>
 
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        totalItems={total}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPage}
-      />
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            上一页
+          </button>
+          <span className="text-sm text-muted-foreground">
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            下一页
+          </button>
+        </div>
+      )}
     </div>
   );
 }

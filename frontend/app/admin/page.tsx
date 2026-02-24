@@ -39,55 +39,54 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!stats) return <div className="text-muted-foreground">Failed to load stats</div>;
+  if (!stats) return <div className="text-muted-foreground">加载失败</div>;
 
   const { users, sessions, messages, memories } = stats;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-foreground">仪表盘</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
-          title="Users"
-          value={users.total}
+          title="用户"
+          value={users?.total ?? 0}
           icon={Users}
           trend={[
-            { label: '7d active', value: users.active_7d },
-            { label: 'Admin', value: users.admin_count },
+            { label: '7天活跃', value: users?.active_7d ?? 0 },
+            { label: '管理员', value: users?.admin_count ?? 0 },
           ]}
         />
         <StatsCard
-          title="Sessions"
-          value={sessions.total}
+          title="会话"
+          value={sessions?.total ?? 0}
           icon={MessagesSquare}
           trend={[
-            { label: '7d active', value: sessions.active_7d },
+            { label: '7天活跃', value: sessions?.active_7d ?? 0 },
           ]}
         />
         <StatsCard
-          title="Messages"
-          value={messages.total}
+          title="消息"
+          value={messages?.total ?? 0}
           icon={MessageCircle}
-          trend={[{ label: '7d', value: messages.last_7d }]}
+          trend={[{ label: '近7天', value: messages?.last_7d ?? 0 }]}
         />
         <StatsCard
-          title="Memories"
-          value={memories.total}
+          title="记忆"
+          value={memories?.total ?? 0}
           icon={Database}
           trend={[
-            { label: 'fact', value: memories.by_type?.fact || 0 },
-            { label: 'episodic', value: memories.by_type?.episodic || 0 },
-            { label: 'insight', value: memories.by_type?.insight || 0 },
+            { label: '事实', value: memories?.by_type?.fact || 0 },
+            { label: '情景', value: memories?.by_type?.episodic || 0 },
+            { label: '洞察', value: memories?.by_type?.insight || 0 },
           ]}
         />
       </div>
 
-      {/* Graph stats */}
-      {(memories.graph_nodes > 0 || memories.graph_edges > 0) && (
+      {memories && (memories.graph_nodes > 0 || memories.graph_edges > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <StatsCard title="Graph Nodes" value={memories.graph_nodes} icon={Network} />
-          <StatsCard title="Graph Edges" value={memories.graph_edges} icon={Network} />
+          <StatsCard title="图谱节点" value={memories.graph_nodes} icon={Network} />
+          <StatsCard title="图谱边" value={memories.graph_edges} icon={Network} />
         </div>
       )}
     </div>

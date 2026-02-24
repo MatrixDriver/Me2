@@ -84,13 +84,13 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
           headers: getAuthHeaders(),
         });
         if (!res.ok) {
-          setError(res.status === 404 ? 'User not found' : 'Failed to load user');
+          setError(res.status === 404 ? '用户不存在' : '加载用户信息失败');
           return;
         }
         setData(await res.json());
       } catch (e) {
         console.error('Failed to load user detail:', e);
-        setError('Failed to load user');
+        setError('加载用户信息失败');
       } finally {
         setLoading(false);
       }
@@ -114,29 +114,28 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to users
+          返回用户列表
         </button>
-        <div className="text-muted-foreground">{error || 'Failed to load user'}</div>
+        <div className="text-muted-foreground">{error || '加载用户信息失败'}</div>
       </div>
     );
   }
 
   const { user, stats, recent_sessions } = data;
-  const memoryTypes = stats.memories.by_type;
-  const memoryTotal = stats.memories.total || 1; // avoid division by zero
+  const memoryTypes = stats?.memories?.by_type ?? { fact: 0, episodic: 0, insight: 0 };
+  const memoryTotal = stats?.memories?.total || 1;
 
   return (
     <div className="space-y-6">
-      {/* Back link */}
       <button
         onClick={() => router.push('/admin/users')}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to users
+        返回用户列表
       </button>
 
-      {/* User info header */}
+      {/* 用户信息 */}
       <div className="glass-card rounded-xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex-1 min-w-0">
@@ -147,7 +146,7 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
               {user.is_admin && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-primary/15 text-primary shrink-0">
                   <ShieldCheck className="w-3 h-3" />
-                  Admin
+                  管理员
                 </span>
               )}
             </div>
@@ -161,56 +160,56 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
           <div className="flex gap-6 text-sm text-muted-foreground shrink-0">
             <div className="flex items-center gap-1.5">
               <CalendarDays className="w-3.5 h-3.5" />
-              <span>Registered {formatDate(user.created_at)}</span>
+              <span>注册于 {formatDate(user.created_at)}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
-              <span>Last active {formatDateTime(user.last_login)}</span>
+              <span>最后活跃 {formatDateTime(user.last_login)}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats cards */}
+      {/* 统计卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatsCard
-          title="Sessions"
-          value={stats.sessions.total}
+          title="会话"
+          value={stats?.sessions?.total ?? 0}
           icon={MessagesSquare}
-          trend={[{ label: 'Active', value: stats.sessions.active }]}
+          trend={[{ label: '活跃', value: stats?.sessions?.active ?? 0 }]}
         />
         <StatsCard
-          title="Messages"
-          value={stats.messages.total}
+          title="消息"
+          value={stats?.messages?.total ?? 0}
           icon={MessageCircle}
-          trend={[{ label: 'Today', value: `+${stats.messages.today}` }]}
+          trend={[{ label: '今天', value: stats?.messages?.today ?? 0 }]}
         />
         <StatsCard
-          title="Memories"
-          value={stats.memories.total}
+          title="记忆"
+          value={stats?.memories?.total ?? 0}
           icon={Database}
           trend={[
-            { label: 'fact', value: memoryTypes.fact },
-            { label: 'episodic', value: memoryTypes.episodic },
-            { label: 'insight', value: memoryTypes.insight },
+            { label: '事实', value: memoryTypes.fact ?? 0 },
+            { label: '情景', value: memoryTypes.episodic ?? 0 },
+            { label: '洞察', value: memoryTypes.insight ?? 0 },
           ]}
         />
       </div>
 
-      {/* Memory breakdown by type */}
+      {/* 记忆分布 */}
       <div className="glass-card rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Memory Breakdown</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">记忆分布</h2>
         <div className="space-y-3">
           {[
-            { key: 'fact', label: 'Fact', value: memoryTypes.fact, icon: Brain, color: 'bg-blue-500' },
-            { key: 'episodic', label: 'Episodic', value: memoryTypes.episodic, icon: BookOpen, color: 'bg-purple-500' },
-            { key: 'insight', label: 'Insight', value: memoryTypes.insight, icon: Lightbulb, color: 'bg-amber-500' },
+            { key: 'fact', label: '事实', value: memoryTypes.fact ?? 0, icon: Brain, color: 'bg-blue-500' },
+            { key: 'episodic', label: '情景', value: memoryTypes.episodic ?? 0, icon: BookOpen, color: 'bg-purple-500' },
+            { key: 'insight', label: '洞察', value: memoryTypes.insight ?? 0, icon: Lightbulb, color: 'bg-amber-500' },
           ].map((item) => {
             const pct = memoryTotal > 0 ? Math.round((item.value / memoryTotal) * 100) : 0;
             return (
               <div key={item.key} className="flex items-center gap-3">
                 <item.icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-sm text-foreground w-20 shrink-0">{item.label}</span>
+                <span className="text-sm text-foreground w-16 shrink-0">{item.label}</span>
                 <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                   <div
                     className={`h-full ${item.color} rounded-full transition-all`}
@@ -226,29 +225,29 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Recent sessions table */}
+      {/* 最近会话 */}
       <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-white/5">
-          <h2 className="text-lg font-semibold text-foreground">Recent Sessions</h2>
+          <h2 className="text-lg font-semibold text-foreground">最近会话</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5">
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">Title</th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">Last Active</th>
-                <th className="text-right px-4 py-3 text-muted-foreground font-medium">Messages</th>
-                <th className="text-center px-4 py-3 text-muted-foreground font-medium">Status</th>
+                <th className="text-left px-4 py-3 text-muted-foreground font-medium">标题</th>
+                <th className="text-left px-4 py-3 text-muted-foreground font-medium">最后活跃</th>
+                <th className="text-right px-4 py-3 text-muted-foreground font-medium">消息数</th>
+                <th className="text-center px-4 py-3 text-muted-foreground font-medium">状态</th>
               </tr>
             </thead>
             <tbody>
-              {recent_sessions.map((session) => (
+              {(recent_sessions ?? []).map((session) => (
                 <tr
                   key={session.id}
                   className="border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
                 >
                   <td className="px-4 py-3 text-foreground">
-                    {session.title || 'Untitled'}
+                    {session.title || '未命名'}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {formatDateTime(session.last_active_at)}
@@ -259,20 +258,20 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
                   <td className="px-4 py-3 text-center">
                     {session.is_active ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/15 text-green-400">
-                        Active
+                        活跃
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/5 text-muted-foreground">
-                        Inactive
+                        不活跃
                       </span>
                     )}
                   </td>
                 </tr>
               ))}
-              {recent_sessions.length === 0 && (
+              {(!recent_sessions || recent_sessions.length === 0) && (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                    No sessions yet
+                    暂无会话
                   </td>
                 </tr>
               )}

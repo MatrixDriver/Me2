@@ -2,17 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Activity,
-  Database,
-  Clock,
-  Cpu,
-  Zap,
-  AlertTriangle,
-  RefreshCw,
-  Loader2,
-  Server,
-  BarChart3,
-  Brain,
+  Activity, Database, Clock, Cpu, Zap, AlertTriangle,
+  RefreshCw, Loader2, Server, BarChart3, Brain,
 } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
@@ -29,25 +20,20 @@ function formatUptime(seconds: number): string {
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const parts: string[] = [];
-  if (d > 0) parts.push(`${d}d`);
-  if (h > 0 || d > 0) parts.push(`${h}h`);
-  parts.push(`${m}m`);
+  if (d > 0) parts.push(`${d}天`);
+  if (h > 0 || d > 0) parts.push(`${h}时`);
+  parts.push(`${m}分`);
   return parts.join(' ');
 }
 
 function formatNumber(n: number): string {
-  return n.toLocaleString();
+  return (n ?? 0).toLocaleString();
 }
 
 interface HealthData {
   uptime_seconds: number;
   neuromemory_version: string;
-  db_pool: {
-    size: number;
-    checked_in: number;
-    checked_out: number;
-    overflow: number;
-  };
+  db_pool: { size: number; checked_in: number; checked_out: number; overflow: number };
 }
 
 interface ApiStatsData {
@@ -115,13 +101,12 @@ export default function SystemMonitoringPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">System</h1>
+        <h1 className="text-2xl font-bold text-foreground">系统监控</h1>
         <div className="flex items-center gap-3">
           {lastRefresh && (
             <span className="text-xs text-muted-foreground/50">
-              Updated {lastRefresh.toLocaleTimeString()}
+              更新于 {lastRefresh.toLocaleTimeString('zh-CN')}
             </span>
           )}
           <button
@@ -130,22 +115,22 @@ export default function SystemMonitoringPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            刷新
           </button>
         </div>
       </div>
 
-      {/* Service Health */}
+      {/* 服务健康 */}
       {health && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Server className="w-4 h-4" />
-            Service Health
+            服务健康
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">Uptime</span>
+                <span className="text-muted-foreground text-sm">运行时间</span>
                 <Clock className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-bold text-foreground">
@@ -165,7 +150,7 @@ export default function SystemMonitoringPage() {
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">DB Pool</span>
+                <span className="text-muted-foreground text-sm">连接池</span>
                 <Database className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-bold text-foreground">
@@ -173,41 +158,41 @@ export default function SystemMonitoringPage() {
               </div>
               <div className="flex gap-3 mt-2">
                 <span className="text-xs text-muted-foreground/50">
-                  Free: <span className="text-foreground/70">{health.db_pool.checked_in}</span>
+                  空闲: <span className="text-foreground/70">{health.db_pool.checked_in}</span>
                 </span>
                 <span className="text-xs text-muted-foreground/50">
-                  Overflow: <span className="text-foreground/70">{health.db_pool.overflow}</span>
+                  溢出: <span className="text-foreground/70">{health.db_pool.overflow}</span>
                 </span>
               </div>
             </div>
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">Status</span>
+                <span className="text-muted-foreground text-sm">状态</span>
                 <Activity className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-2xl font-bold text-green-400">Healthy</span>
+                <span className="text-2xl font-bold text-green-400">正常</span>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* API Performance */}
+      {/* API 性能 */}
       {apiStats && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
-            API Performance
-            <span className="text-xs text-muted-foreground/50">(24h)</span>
+            API 性能
+            <span className="text-xs text-muted-foreground/50">(24小时)</span>
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">Total Requests</span>
+                <span className="text-muted-foreground text-sm">总请求</span>
                 <Zap className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-bold text-foreground">
@@ -216,7 +201,7 @@ export default function SystemMonitoringPage() {
             </div>
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">Errors</span>
+                <span className="text-muted-foreground text-sm">错误</span>
                 <AlertTriangle className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-bold text-foreground">
@@ -224,52 +209,33 @@ export default function SystemMonitoringPage() {
               </div>
               {apiStats.total_requests > 0 && (
                 <div className="text-xs text-muted-foreground/50 mt-1">
-                  {((apiStats.error_count / apiStats.total_requests) * 100).toFixed(2)}% error rate
+                  错误率 {((apiStats.error_count / apiStats.total_requests) * 100).toFixed(2)}%
                 </div>
               )}
             </div>
           </div>
 
-          {Object.keys(apiStats.endpoints).length > 0 && (
+          {apiStats.endpoints && Object.keys(apiStats.endpoints).length > 0 && (
             <div className="glass-card rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/5">
-                      <th className="text-left px-4 py-3 text-muted-foreground font-medium">
-                        Endpoint
-                      </th>
-                      <th className="text-right px-4 py-3 text-muted-foreground font-medium">
-                        Count
-                      </th>
-                      <th className="text-right px-4 py-3 text-muted-foreground font-medium">
-                        Avg (ms)
-                      </th>
-                      <th className="text-right px-4 py-3 text-muted-foreground font-medium">
-                        P95 (ms)
-                      </th>
+                      <th className="text-left px-4 py-3 text-muted-foreground font-medium">接口</th>
+                      <th className="text-right px-4 py-3 text-muted-foreground font-medium">次数</th>
+                      <th className="text-right px-4 py-3 text-muted-foreground font-medium">平均 (ms)</th>
+                      <th className="text-right px-4 py-3 text-muted-foreground font-medium">P95 (ms)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(apiStats.endpoints)
                       .sort(([, a], [, b]) => b.count - a.count)
-                      .map(([endpoint, stats]) => (
-                        <tr
-                          key={endpoint}
-                          className="border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
-                        >
-                          <td className="px-4 py-3 font-mono text-xs text-foreground">
-                            {endpoint}
-                          </td>
-                          <td className="px-4 py-3 text-right text-foreground tabular-nums">
-                            {formatNumber(stats.count)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-foreground tabular-nums">
-                            {stats.avg_ms.toFixed(1)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-foreground tabular-nums">
-                            {stats.p95_ms.toFixed(1)}
-                          </td>
+                      .map(([endpoint, s]) => (
+                        <tr key={endpoint} className="border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors">
+                          <td className="px-4 py-3 font-mono text-xs text-foreground">{endpoint}</td>
+                          <td className="px-4 py-3 text-right text-foreground tabular-nums">{formatNumber(s.count)}</td>
+                          <td className="px-4 py-3 text-right text-foreground tabular-nums">{s.avg_ms?.toFixed(1) ?? '-'}</td>
+                          <td className="px-4 py-3 text-right text-foreground tabular-nums">{s.p95_ms?.toFixed(1) ?? '-'}</td>
                         </tr>
                       ))}
                   </tbody>
@@ -280,74 +246,73 @@ export default function SystemMonitoringPage() {
         </section>
       )}
 
-      {/* LLM Stats */}
+      {/* LLM 使用 */}
       {llmStats && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Brain className="w-4 h-4" />
-            LLM Usage
-            <span className="text-xs text-muted-foreground/50">(24h)</span>
+            LLM 使用
+            <span className="text-xs text-muted-foreground/50">(24小时)</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">Calls</span>
+                <span className="text-muted-foreground text-sm">调用次数</span>
                 <Zap className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-bold text-foreground">
                 {formatNumber(llmStats.total_calls)}
               </div>
               <div className="text-xs text-muted-foreground/50 mt-1">
-                Today: <span className="text-foreground/70">{formatNumber(llmStats.today_calls)}</span>
+                今天: <span className="text-foreground/70">{formatNumber(llmStats.today_calls)}</span>
               </div>
             </div>
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">Tokens</span>
+                <span className="text-muted-foreground text-sm">Token 用量</span>
                 <BarChart3 className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-bold text-foreground">
-                {formatNumber(llmStats.total_prompt_tokens + llmStats.total_completion_tokens)}
+                {formatNumber((llmStats.total_prompt_tokens || 0) + (llmStats.total_completion_tokens || 0))}
               </div>
               <div className="flex gap-3 mt-2">
                 <span className="text-xs text-muted-foreground/50">
-                  Prompt: <span className="text-foreground/70">{formatNumber(llmStats.total_prompt_tokens)}</span>
+                  输入: <span className="text-foreground/70">{formatNumber(llmStats.total_prompt_tokens)}</span>
                 </span>
                 <span className="text-xs text-muted-foreground/50">
-                  Completion: <span className="text-foreground/70">{formatNumber(llmStats.total_completion_tokens)}</span>
+                  输出: <span className="text-foreground/70">{formatNumber(llmStats.total_completion_tokens)}</span>
                 </span>
               </div>
             </div>
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">Avg Duration</span>
+                <span className="text-muted-foreground text-sm">平均耗时</span>
                 <Clock className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-bold text-foreground">
-                {llmStats.avg_duration_ms.toFixed(0)}
+                {(llmStats.avg_duration_ms ?? 0).toFixed(0)}
                 <span className="text-sm font-normal text-muted-foreground ml-1">ms</span>
               </div>
             </div>
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">Failure Rate</span>
+                <span className="text-muted-foreground text-sm">失败率</span>
                 <AlertTriangle className="w-4 h-4 text-muted-foreground/50" />
               </div>
-              <div className={`text-2xl font-bold ${llmStats.failure_rate > 0.05 ? 'text-red-400' : 'text-green-400'}`}>
-                {(llmStats.failure_rate * 100).toFixed(2)}%
+              <div className={`text-2xl font-bold ${(llmStats.failure_rate ?? 0) > 0.05 ? 'text-red-400' : 'text-green-400'}`}>
+                {((llmStats.failure_rate ?? 0) * 100).toFixed(2)}%
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* Empty state */}
       {!health && !apiStats && !llmStats && (
         <div className="text-center py-20 text-muted-foreground">
-          Failed to load system data
+          加载系统数据失败
         </div>
       )}
     </div>

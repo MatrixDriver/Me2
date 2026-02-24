@@ -73,12 +73,31 @@ class MessageResponse(BaseModel):
     memories_recalled: Optional[int] = None
     insights_used: Optional[int] = None
     recalled_summaries: Optional[List[RecalledMemorySummary]] = None
+    debug_info: Optional[dict] = None
 
 
 class SessionExport(BaseModel):
     """会话导出响应"""
     session: SessionResponse
     messages: List[MessageResponse]
+
+
+def _build_debug_info(msg) -> Optional[dict]:
+    """从 Message.meta 和 system_prompt 构建 debug_info（供历史消息使用）"""
+    if msg.role != "assistant" or not msg.meta:
+        return None
+    meta = msg.meta
+    timings = meta.get("timings")
+    if not timings:
+        return None
+    return {
+        "model": meta.get("model", ""),
+        "temperature": meta.get("temperature"),
+        "max_tokens": meta.get("max_tokens"),
+        "history_count": meta.get("history_messages_count", 0),
+        "system_prompt": msg.system_prompt,
+        "timings": timings,
+    }
 
 
 def _get_recalled_summaries(msg) -> Optional[List[RecalledMemorySummary]]:
@@ -280,7 +299,8 @@ async def get_session_messages(
             system_prompt=msg.system_prompt,
             memories_recalled=msg.meta.get("memories_count") if msg.meta else None,
             insights_used=msg.meta.get("insights_count") if msg.meta else None,
-            recalled_summaries=_get_recalled_summaries(msg)
+            recalled_summaries=_get_recalled_summaries(msg),
+            debug_info=_build_debug_info(msg)
         ) for msg in messages]
 
     except HTTPException:
@@ -335,7 +355,8 @@ async def export_session(
             system_prompt=msg.system_prompt,
             memories_recalled=msg.meta.get("memories_count") if msg.meta else None,
             insights_used=msg.meta.get("insights_count") if msg.meta else None,
-            recalled_summaries=_get_recalled_summaries(msg)
+            recalled_summaries=_get_recalled_summaries(msg),
+            debug_info=_build_debug_info(msg)
         ) for msg in messages]
 
         return SessionExport(session=session_resp, messages=message_resps)

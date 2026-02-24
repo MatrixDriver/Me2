@@ -70,6 +70,7 @@ export interface SessionMessage {
   memories_recalled?: number;
   recalled_summaries?: RecalledMemory[];
   system_prompt?: string;
+  debug_info?: ChatMessage['debug_info'];
 }
 
 export interface SessionExportData {

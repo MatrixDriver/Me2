@@ -54,6 +54,7 @@ export default function ChatInterface({
         memories_recalled: m.memories_recalled,
         recalled_summaries: m.recalled_summaries,
         system_prompt: m.system_prompt,
+        debug_info: m.debug_info,
       }));
       instantScrollRef.current = true;
       setMessages(chatMessages);

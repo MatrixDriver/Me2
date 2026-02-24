@@ -235,7 +235,8 @@ class ConversationEngine:
                     "temperature": 0.8,
                     "max_tokens": 500,
                     "model": "deepseek-chat",
-                    "history_messages_count": len(history_messages)
+                    "history_messages_count": len(history_messages),
+                    "timings": timings
                 }
             )
             db.add(ai_msg)
@@ -492,7 +493,8 @@ class ConversationEngine:
                     "temperature": 0.8,
                     "max_tokens": 500,
                     "model": "deepseek-chat",
-                    "history_messages_count": len(history_messages)
+                    "history_messages_count": len(history_messages),
+                    "timings": timings
                 }
             )
             db.add(ai_msg)

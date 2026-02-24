@@ -60,10 +60,14 @@ export default function ChatInterface({
       setInternalSessionId(sid);
     } catch (err) {
       console.error('加载历史消息失败:', err);
+      // 会话不存在（404）时，清除无效 session 并重置为新聊天
+      setMessages([]);
+      setInternalSessionId(undefined);
+      if (onNewChat) onNewChat();
     } finally {
       setLoadingHistory(false);
     }
-  }, []);
+  }, [onNewChat]);
 
   useEffect(() => {
     if (externalSessionId) {

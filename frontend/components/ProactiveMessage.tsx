@@ -40,8 +40,9 @@ export default function ProactiveMessageBanner({ userId, onMessageRead }: Proact
           setDismissed(false);
         }
       }
-    } catch (error) {
-      console.error('获取主动消息失败:', error);
+      // 404 等非 ok 状态静默忽略（端点可能未部署）
+    } catch {
+      // 网络错误静默忽略
     }
   };
 

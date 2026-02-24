@@ -23,6 +23,9 @@ interface DebugInfo {
     total?: number;
     recall_detail?: {
       embedding?: number;
+      vector_search?: number;
+      graph_search?: number;
+      profile_fetch?: number;
       parallel_search?: number;
       merge?: number;
       vector_count?: number;
@@ -96,11 +99,17 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
               </div>
               {/* 记忆召回子阶段 */}
               {rd && (
-                <div className="ml-[6.5em] mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground/40">
-                  {rd.embedding ? <span>向量化 {(rd.embedding * 1000).toFixed(0)}ms</span> : null}
-                  {rd.parallel_search ? <span>· 搜索 {(rd.parallel_search * 1000).toFixed(0)}ms</span> : null}
-                  {rd.vector_count !== undefined ? <span>· {rd.vector_count}条向量</span> : null}
-                  {(rd.graph_count ?? 0) > 0 ? <span>· {rd.graph_count}条图谱</span> : null}
+                <div className="ml-[6.5em] mt-0.5 space-y-0.5 text-[10px] text-muted-foreground/40">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {rd.embedding ? <span className={rd.embedding > 1 ? 'text-red-400/70' : ''}>Embedding {(rd.embedding * 1000).toFixed(0)}ms</span> : null}
+                    {rd.vector_search ? <span>· 向量搜索 {(rd.vector_search * 1000).toFixed(0)}ms</span> : null}
+                    {rd.graph_search !== undefined ? <span>· 图谱搜索 {(rd.graph_search * 1000).toFixed(0)}ms</span> : null}
+                    {rd.profile_fetch ? <span>· 画像 {(rd.profile_fetch * 1000).toFixed(0)}ms</span> : null}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {rd.vector_count !== undefined ? <span>{rd.vector_count}条向量</span> : null}
+                    {(rd.graph_count ?? 0) > 0 ? <span>· {rd.graph_count}条图谱</span> : null}
+                  </div>
                 </div>
               )}
             </div>

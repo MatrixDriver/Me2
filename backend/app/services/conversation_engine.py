@@ -40,16 +40,31 @@ class ConversationEngine:
         event_after, event_before = temporal.extract_time_range(message)
         _decay = DEFAULT_DECAY_RATE
 
-        # 3. 并行搜索（去掉 conversation 搜索，prompt 未使用）
-        t0 = time.time()
-        coros = [
-            nm._fetch_vector_memories(
+        # 3. 并行搜索（分别计时每个子任务）
+        async def _timed_vector():
+            t = time.time()
+            res = await nm._fetch_vector_memories(
                 user_id, message, 20, query_embedding, event_after, event_before, _decay,
-            ),
-            nm._fetch_user_profile(user_id),
-        ]
+            )
+            recall_timings['vector_search'] = time.time() - t
+            return res
+
+        async def _timed_profile():
+            t = time.time()
+            res = await nm._fetch_user_profile(user_id)
+            recall_timings['profile_fetch'] = time.time() - t
+            return res
+
+        async def _timed_graph():
+            t = time.time()
+            res = await nm._fetch_graph_memories(user_id, message, 20)
+            recall_timings['graph_search'] = time.time() - t
+            return res
+
+        t0 = time.time()
+        coros = [_timed_vector(), _timed_profile()]
         if nm._graph_enabled:
-            coros.append(nm._fetch_graph_memories(user_id, message, 20))
+            coros.append(_timed_graph())
 
         results = await asyncio.gather(*coros, return_exceptions=True)
         recall_timings['parallel_search'] = time.time() - t0
@@ -62,8 +77,6 @@ class ConversationEngine:
 
         # 4. 合并去重
         t0 = time.time()
-        recall_result = nm._build_recall_result if hasattr(nm, '_build_recall_result') else None
-        # 手动合并（与 nm.recall 逻辑一致）
         seen_contents: set = set()
         merged = []
         for r in vector_results:

@@ -196,24 +196,33 @@ def mock_llm_response():
 def mock_neuromemory():
     """Mock NeuroMemory 客户端"""
     class MockNeuroMemory:
-        async def add_memory(self, user_id, content, memory_type, metadata=None):
+        async def _add_memory(self, user_id, content, memory_type="general", metadata=None, check_conflict=True):
             return {"id": "mock_memory_id", "success": True}
 
-        async def search(self, user_id, query, limit=5, threshold=0.7):
-            return [
-                {
-                    "id": "mem_1",
-                    "content": "相关记忆1",
-                    "score": 0.9,
-                    "timestamp": "2024-02-10T10:00:00Z"
-                }
-            ]
+        async def recall(self, user_id, query, limit=20, **kwargs):
+            return {
+                "merged": [
+                    {
+                        "id": "mem_1",
+                        "content": "相关记忆1",
+                        "score": 0.9,
+                        "source": "vector",
+                        "memory_type": "fact",
+                    }
+                ],
+                "vector_results": [],
+                "graph_results": [],
+                "conversation_results": [],
+            }
 
-        async def get_recent_memories(self, user_id, days=7, limit=50):
+        async def get_recent_memories(self, user_id, days=7, **kwargs):
             return []
 
-        async def get_by_time_range(self, user_id, start_time, end_time):
-            return []
+        async def stats(self, user_id):
+            return {"total": 0, "by_type": {}, "by_week": [], "active_entities": 0}
+
+        async def delete_user_data(self, user_id):
+            return {"deleted": {}}
 
     return MockNeuroMemory()
 

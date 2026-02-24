@@ -293,7 +293,8 @@ class AdminService:
     async def delete_user(self, user_id: str, current_admin_id: str) -> dict[str, Any]:
         """
         删除用户及其所有数据。不能删除自己。
-        CASCADE 会自动清 sessions/messages，额外清非 ORM 表。
+        先用 nm.delete_user_data() 清理 NeuroMemory 数据，
+        再 CASCADE 删除用户（自动清 sessions/messages）。
         """
         if user_id == current_admin_id:
             raise ValueError("不能删除自己的账号")
@@ -307,12 +308,12 @@ class AdminService:
 
         username = user.username
 
-        # 清理非 ORM 表中的用户数据
-        for table in ("embeddings", "graph_nodes", "graph_edges", "key_values", "emotion_profiles", "documents"):
-            try:
-                await self.db.execute(text(f"DELETE FROM {table} WHERE user_id = :uid"), {"uid": user_id})
-            except Exception:
-                pass
+        # 用 NeuroMemory 公开 API 清理其管理的所有表
+        from app.main import nm
+        try:
+            await nm.delete_user_data(user_id)
+        except Exception:
+            pass
 
         # 删除用户（CASCADE 自动清 sessions -> messages）
         await self.db.execute(delete(User).where(User.id == user_id))
@@ -323,7 +324,8 @@ class AdminService:
     async def clear_user_data(self, user_id: str) -> dict[str, Any]:
         """
         清空用户数据（保留用户账号）。
-        删除会话、消息、记忆、图谱等。
+        用 nm.delete_user_data() 清理 NeuroMemory 管理的数据，
+        再手动清 Me2 自己的 sessions/messages。
         """
         user_result = await self.db.execute(
             select(User).where(User.id == user_id)
@@ -342,17 +344,16 @@ class AdminService:
         result = await self.db.execute(delete(Session).where(Session.user_id == user_id))
         deleted["sessions"] = result.rowcount
 
-        # 非 ORM 表
-        for table in ("embeddings", "graph_nodes", "graph_edges", "key_values", "emotion_profiles", "documents"):
-            try:
-                result = await self.db.execute(
-                    text(f"DELETE FROM {table} WHERE user_id = :uid"), {"uid": user_id}
-                )
-                deleted[table] = result.rowcount
-            except Exception:
-                deleted[table] = 0
-
         await self.db.commit()
+
+        # 用 NeuroMemory 公开 API 清理其管理的所有表
+        from app.main import nm
+        try:
+            nm_result = await nm.delete_user_data(user_id)
+            nm_deleted = nm_result.get("deleted", {})
+            deleted.update(nm_deleted)
+        except Exception:
+            pass
 
         return {"user_id": user_id, "username": user.username, "deleted": deleted}
 

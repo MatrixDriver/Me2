@@ -138,12 +138,12 @@ async def lifespan(app: FastAPI):
             extraction=ExtractionStrategy(
                 message_interval=settings.NEUROMEMORY_EXTRACTION_INTERVAL,
                 idle_timeout=settings.NEUROMEMORY_IDLE_TIMEOUT,
-                reflection_interval=settings.NEUROMEMORY_REFLECTION_INTERVAL,
                 on_session_close=True,
                 on_shutdown=True,
             ),
+            reflection_interval=settings.NEUROMEMORY_REFLECTION_INTERVAL,
             graph_enabled=settings.NEUROMEMORY_GRAPH_ENABLED,
-            echo=settings.DEBUG,  # 启用SQL日志以调试事务问题
+            echo=settings.DEBUG,
         )
         await nm.init()
         logger.info("✅ NeuroMemory 初始化完成")

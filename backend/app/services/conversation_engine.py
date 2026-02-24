@@ -1,4 +1,4 @@
-"""对话引擎 - 基于 NeuroMemory v2 的温暖陪伴式聊天"""
+"""对话引擎 - 基于 NeuroMemory v0.6 的温暖陪伴式聊天"""
 import asyncio
 import logging
 import time
@@ -21,79 +21,40 @@ class ConversationEngine:
     async def _recall_memories(self, nm, user_id: str, message: str, timings: dict | None = None):
         """统一的记忆召回逻辑（非流式和流式共用）
 
-        遵循 NeuroMemory 最佳实践：
-        - 手动拆分 recall 步骤以获取子阶段计时
-        - merged 已包含 fact/episodic/insight，无需单独 search
+        使用 NeuroMemory 0.6 公开 API nm.recall()，
+        返回值包含 merged（去重排序）、graph_results 等。
         """
-        from neuromemory.services.search import DEFAULT_DECAY_RATE
-        from neuromemory.services.temporal import TemporalExtractor
-
         recall_timings = {}
 
-        # 1. Embedding
         t0 = time.time()
-        query_embedding = await nm._cached_embed(message)
-        recall_timings['embedding'] = time.time() - t0
+        result = await nm.recall(
+            user_id=user_id,
+            query=message,
+            limit=20,
+            include_conversations=False,
+        )
+        recall_timings['recall_total'] = time.time() - t0
 
-        # 2. 时间解析
-        temporal = TemporalExtractor()
-        event_after, event_before = temporal.extract_time_range(message)
-        _decay = DEFAULT_DECAY_RATE
+        merged = result.get("merged", [])
+        graph_results = result.get("graph_results", [])
 
-        # 3. 并行搜索（分别计时每个子任务）
-        async def _timed_vector():
-            t = time.time()
-            res = await nm._fetch_vector_memories(
-                user_id, message, 20, query_embedding, event_after, event_before, _decay,
-            )
-            recall_timings['vector_search'] = time.time() - t
-            return res
-
-        async def _timed_profile():
-            t = time.time()
-            res = await nm._fetch_user_profile(user_id)
-            recall_timings['profile_fetch'] = time.time() - t
-            return res
-
-        async def _timed_graph():
-            t = time.time()
-            res = await nm._fetch_graph_memories(user_id, message, 20)
-            recall_timings['graph_search'] = time.time() - t
-            return res
-
-        t0 = time.time()
-        coros = [_timed_vector(), _timed_profile()]
-        if nm._graph_enabled:
-            coros.append(_timed_graph())
-
-        results = await asyncio.gather(*coros, return_exceptions=True)
-        recall_timings['parallel_search'] = time.time() - t0
-
-        vector_results = results[0] if not isinstance(results[0], Exception) else []
-        user_profile = results[1] if not isinstance(results[1], Exception) else {}
-        graph_results = []
-        if nm._graph_enabled and len(results) > 2:
-            graph_results = results[2] if not isinstance(results[2], Exception) else []
-
-        # 4. 合并去重
-        t0 = time.time()
-        seen_contents: set = set()
-        merged = []
-        for r in vector_results:
-            content = r.get("content", "")
-            if content not in seen_contents:
-                seen_contents.add(content)
-                entry = {**r, "source": "vector"}
-                merged.append(entry)
-
+        # 提取图谱三元组文本
         graph_context = [
             f"{r.get('subject')} → {r.get('relation')} → {r.get('object')}"
             for r in graph_results
             if r.get("subject") and r.get("relation") and r.get("object")
         ]
-        recall_timings['merge'] = time.time() - t0
 
-        recall_timings['vector_count'] = len(vector_results)
+        # 获取用户画像（kv store）
+        t0 = time.time()
+        try:
+            profile_items = await nm.kv.list(user_id, "profile")
+            user_profile = {item.key: item.value for item in profile_items}
+        except Exception:
+            user_profile = {}
+        recall_timings['profile_fetch'] = time.time() - t0
+
+        recall_timings['merged_count'] = len(merged)
         recall_timings['graph_count'] = len(graph_results)
 
         if timings is not None:
@@ -185,7 +146,7 @@ class ConversationEngine:
                 system_prompt=system_prompt,
                 recalled_memories=[{
                     "content": m["content"],
-                    "score": m.get("relevance", 0) or m.get("score", 0),
+                    "score": m.get("score", 0),
                     "memory_type": m.get("memory_type", ""),
                     "created_at": m.get("created_at").isoformat() if m.get("created_at") else None,
                     "metadata": m.get("metadata", {})
@@ -256,9 +217,9 @@ class ConversationEngine:
         """按 NeuroMemory 最佳实践组装 system prompt
 
         核心原则：
-        - merged 按类型分层：fact → episodic → insight → others
+        - recall() 的 merged 已按综合评分排序（RRF + 时间衰减 + 重要度 + 图谱增强）
+        - 按类型分层注入：fact → episodic → insight → graph → others
         - profile 始终注入
-        - graph_context 补充结构化知识
         """
         # 1. 用户画像
         profile_lines = []
@@ -277,12 +238,14 @@ class ConversationEngine:
                     profile_lines.append(f"- {label}: {value}")
         profile_text = "\n".join(profile_lines) if profile_lines else "暂无"
 
-        # 2. merged 按类型分层
+        # 2. merged 按类型分层（merged 已按 score 排序）
         facts = [m for m in memories if m.get("memory_type") == "fact"][:5]
         episodes = [m for m in memories if m.get("memory_type") == "episodic"][:5]
         insights = [m for m in memories if m.get("memory_type") == "insight"][:3]
+        graph_facts = [m for m in memories if m.get("source") == "graph"][:5]
         others = [m for m in memories
-                  if m.get("memory_type") not in ("fact", "episodic", "insight")][:3]
+                  if m.get("memory_type") not in ("fact", "episodic", "insight")
+                  and m.get("source") != "graph"][:3]
 
         def fmt(items: list[dict]) -> str:
             lines = []
@@ -290,9 +253,14 @@ class ConversationEngine:
                 lines.append(f"- {m['content']}")
             return "\n".join(lines) if lines else "暂无"
 
-        # 3. 图谱关系
+        # 3. 图谱关系（三元组补充）
         graph_lines = (graph_context or [])[:5]
-        graph_text = "\n".join(f"- {g}" for g in graph_lines) if graph_lines else "暂无"
+        # 合并 graph_facts 中的内容
+        for m in graph_facts:
+            content = m.get("content", "")
+            if content and content not in graph_lines:
+                graph_lines.append(content)
+        graph_text = "\n".join(f"- {g}" for g in graph_lines[:8]) if graph_lines else "暂无"
 
         # 4. 情感上下文
         emotional_hint = self._extract_emotional_context(memories)
@@ -435,7 +403,7 @@ class ConversationEngine:
                 system_prompt=system_prompt,
                 recalled_memories=[{
                     "content": m["content"],
-                    "score": m.get("relevance", 0) or m.get("score", 0),
+                    "score": m.get("score", 0),
                     "memory_type": m.get("memory_type", ""),
                     "created_at": m.get("created_at").isoformat() if m.get("created_at") else None,
                     "metadata": m.get("metadata", {})
@@ -478,7 +446,7 @@ class ConversationEngine:
             recalled_summaries = [
                 {
                     "content": m.get("content", "")[:100],
-                    "score": round(m.get("relevance", 0) or m.get("score", 0), 4),
+                    "score": round(m.get("score", 0), 4),
                     "memory_type": m.get("memory_type"),
                     "source": m.get("source"),
                 }

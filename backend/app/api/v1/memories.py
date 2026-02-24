@@ -347,75 +347,13 @@ async def delete_all_memories(
 async def reset_all_user_data(
     current_user: User = Depends(get_current_user),
 ):
-    """清除用户所有 AI 记忆数据（记忆、图谱、情绪、档案、偏好）"""
+    """清除用户所有 AI 记忆数据（via nm.delete_user_data）"""
     try:
         nm = _get_nm()
-        from neuromemory.services.memory import MemoryService
-        from neuromemory.models.graph import GraphNode, GraphEdge
-        from neuromemory.models.emotion_profile import EmotionProfile
-        from sqlalchemy import delete
-
-        deleted_memories = 0
-        deleted_nodes = 0
-        deleted_edges = 0
-        deleted_emotion = False
-
-        async with nm._db.session() as session:
-            svc = MemoryService(session)
-
-            # 1. 清除所有记忆条目
-            deleted_memories = await svc.delete_all_memories(current_user.id)
-
-            # 2. 清除图谱节点
-            node_result = await session.execute(
-                delete(GraphNode).where(GraphNode.user_id == current_user.id)
-            )
-            deleted_nodes = node_result.rowcount
-
-            # 3. 清除图谱边
-            edge_result = await session.execute(
-                delete(GraphEdge).where(GraphEdge.user_id == current_user.id)
-            )
-            deleted_edges = edge_result.rowcount
-
-            # 4. 清除情绪档案
-            emotion_result = await session.execute(
-                delete(EmotionProfile).where(EmotionProfile.user_id == current_user.id)
-            )
-            deleted_emotion = emotion_result.rowcount > 0
-
-            await session.commit()
-
-        # 5. 清除 Profile KV
-        try:
-            profile_items = await nm.kv.list(current_user.id, "profile")
-            for item in profile_items:
-                try:
-                    await nm.kv.delete(current_user.id, "profile", item.key)
-                except Exception as e:
-                    logger.warning(f"清除 profile KV 条目 {item.key} 失败: {e}", exc_info=True)
-        except Exception as e:
-            logger.warning(f"列取 profile KV 失败: {e}", exc_info=True)
-
-        # 6. 清除 Preferences KV
-        try:
-            pref_items = await nm.kv.list(current_user.id, "preferences")
-            for item in pref_items:
-                try:
-                    await nm.kv.delete(current_user.id, "preferences", item.key)
-                except Exception as e:
-                    logger.warning(f"清除 preferences KV 条目 {item.key} 失败: {e}", exc_info=True)
-        except Exception as e:
-            logger.warning(f"列取 preferences KV 失败: {e}", exc_info=True)
-
+        result = await nm.delete_user_data(current_user.id)
         return {
             "success": True,
-            "deleted": {
-                "memories": deleted_memories,
-                "graph_nodes": deleted_nodes,
-                "graph_edges": deleted_edges,
-                "emotion_profile": deleted_emotion,
-            },
+            "deleted": result.get("deleted", {}),
         }
     except Exception as e:
         logger.error(f"重置所有数据失败: {e}", exc_info=True)
@@ -426,29 +364,10 @@ async def reset_all_user_data(
 
 @router.get("/stats")
 async def get_memory_stats(current_user: User = Depends(get_current_user)):
-    """获取记忆统计信息（真实查询）"""
+    """获取记忆统计信息（via nm.stats）"""
     try:
         nm = _get_nm()
-        from neuromemory.services.memory import MemoryService
-
-        async with nm._db.session() as session:
-            svc = MemoryService(session)
-
-            # 总量
-            total, _ = await svc.list_all_memories(current_user.id, limit=0, offset=0)
-
-            # 按类型统计
-            by_type = {}
-            for mt in ["fact", "episodic", "insight", "general"]:
-                count, _ = await svc.list_all_memories(
-                    current_user.id, memory_type=mt, limit=0, offset=0
-                )
-                if count > 0:
-                    by_type[mt] = count
-
-        # 最近7天 — 使用顶层方法
-        recent = await nm.get_recent_memories(current_user.id, days=7)
-        recent_count = len(recent)
+        stats = await nm.stats(current_user.id)
 
         try:
             from importlib.metadata import version as pkg_version
@@ -456,11 +375,19 @@ async def get_memory_stats(current_user: User = Depends(get_current_user)):
         except Exception:
             nm_version = "unknown"
 
+        total = stats.get("total", 0)
+        by_type = stats.get("by_type", {})
+
+        # 从 by_week 计算最近 7 天近似值
+        by_week = stats.get("by_week", [])
+        recent_count = by_week[-1]["count"] if by_week else 0
+
         return {
             "total": total,
             "by_type": by_type,
             "recent_7_days_total": recent_count,
             "avg_per_day": round(recent_count / 7, 1) if recent_count > 0 else 0,
+            "active_entities": stats.get("active_entities", 0),
             "neuromemory_version": nm_version,
         }
     except Exception as e:
@@ -475,16 +402,17 @@ async def search_memories(
     request: SearchRequest,
     current_user: User = Depends(get_current_user),
 ):
-    """语义搜索记忆"""
+    """语义搜索记忆（via nm.recall）"""
     try:
         nm = _get_nm()
-        memories = await nm.search(
+        result = await nm.recall(
             user_id=current_user.id,
             query=request.query,
             limit=request.limit,
             memory_type=request.memory_type,
         )
-        # Use vector_score (cosine similarity 0~1) for display; rrf_score is too small
+        memories = result.get("merged", [])
+        # Use vector_score (cosine similarity 0~1) for display if available
         for m in memories:
             if "vector_score" in m:
                 m["score"] = m["vector_score"]
@@ -595,9 +523,10 @@ async def conversational_correct(
             }
 
         search_query = correction_info.get("search_query", request.correction)
-        related = await nm.search(user_id=user_id, query=search_query, limit=10)
+        recall_result = await nm.recall(user_id=user_id, query=search_query, limit=10)
+        related = recall_result.get("merged", [])
 
-        await nm.add_memory(
+        await nm._add_memory(
             user_id=user_id,
             content=request.correction,
             memory_type="fact",

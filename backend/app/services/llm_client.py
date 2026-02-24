@@ -5,9 +5,11 @@ LLM 客户端封装
 """
 import logging
 import json
+import time
 from typing import Optional, List, Dict, Any
 from openai import AsyncOpenAI
 from app.config import settings
+from app.services.metrics_collector import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -95,13 +97,34 @@ class LLMClient:
                 # 返回异步生成器
                 async def stream_generator():
                     full_response = ""
-                    async for chunk in await self.client.chat.completions.create(**kwargs):
-                        if not chunk.choices:
-                            continue
-                        if chunk.choices[0].delta.content:
-                            content = chunk.choices[0].delta.content
-                            full_response += content
-                            yield content
+                    llm_start = time.time()
+                    try:
+                        async for chunk in await self.client.chat.completions.create(**kwargs):
+                            if not chunk.choices:
+                                continue
+                            if chunk.choices[0].delta.content:
+                                content = chunk.choices[0].delta.content
+                                full_response += content
+                                yield content
+
+                        llm_duration = (time.time() - llm_start) * 1000
+                        MetricsCollector().record_llm(
+                            model=kwargs.get("model", "unknown"),
+                            prompt_tokens=0,
+                            completion_tokens=0,
+                            duration_ms=llm_duration,
+                            success=True,
+                        )
+                    except Exception:
+                        llm_duration = (time.time() - llm_start) * 1000
+                        MetricsCollector().record_llm(
+                            model=kwargs.get("model", "unknown"),
+                            prompt_tokens=0,
+                            completion_tokens=0,
+                            duration_ms=llm_duration,
+                            success=False,
+                        )
+                        raise
 
                     # 流结束后返回调试信息（如果需要）
                     if return_debug_info:
@@ -121,7 +144,29 @@ class LLMClient:
                 return stream_generator()
 
             # 非流式生成（原有逻辑）
-            response = await self.client.chat.completions.create(**kwargs)
+            llm_start = time.time()
+            try:
+                response = await self.client.chat.completions.create(**kwargs)
+                llm_duration = (time.time() - llm_start) * 1000
+                usage = response.usage
+                MetricsCollector().record_llm(
+                    model=kwargs.get("model", "unknown"),
+                    prompt_tokens=usage.prompt_tokens if usage else 0,
+                    completion_tokens=usage.completion_tokens if usage else 0,
+                    duration_ms=llm_duration,
+                    success=True,
+                )
+            except Exception as e:
+                llm_duration = (time.time() - llm_start) * 1000
+                MetricsCollector().record_llm(
+                    model=kwargs.get("model", "unknown"),
+                    prompt_tokens=0,
+                    completion_tokens=0,
+                    duration_ms=llm_duration,
+                    success=False,
+                )
+                raise
+
             generated_text = response.choices[0].message.content.strip()
 
             # 返回调试信息

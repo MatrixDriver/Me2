@@ -21,40 +21,119 @@ class ConversationEngine:
     async def _recall_memories(self, nm, user_id: str, message: str, timings: dict | None = None):
         """统一的记忆召回逻辑（非流式和流式共用）
 
-        使用 NeuroMemory 0.6 公开 API nm.recall()，
-        返回值包含 merged（去重排序）、graph_results 等。
+        手动拆分 nm.recall() 的内部步骤以获取子阶段计时，
+        便于在调试面板中展示各步骤耗时瓶颈。
         """
+        from neuromemory.services.search import DEFAULT_DECAY_RATE
+        from neuromemory.services.temporal import TemporalExtractor
+
         recall_timings = {}
 
+        # 1. Embedding
         t0 = time.time()
-        result = await nm.recall(
-            user_id=user_id,
-            query=message,
-            limit=20,
-            include_conversations=False,
-        )
-        recall_timings['recall_total'] = time.time() - t0
+        query_embedding = await nm._cached_embed(message)
+        recall_timings['embedding'] = time.time() - t0
 
-        merged = result.get("merged", [])
-        graph_results = result.get("graph_results", [])
+        # 2. 时间解析
+        temporal = TemporalExtractor()
+        event_after, event_before = temporal.extract_time_range(message)
+        _decay = DEFAULT_DECAY_RATE
 
-        # 提取图谱三元组文本
+        # 3. 并行搜索（分别计时每个子任务）
+        async def _timed_vector():
+            t = time.time()
+            res = await nm._fetch_vector_memories(
+                user_id, message, 20, query_embedding, event_after, event_before, _decay,
+            )
+            recall_timings['vector_search'] = time.time() - t
+            return res
+
+        async def _timed_profile():
+            t = time.time()
+            res = await nm._fetch_user_profile(user_id)
+            recall_timings['profile_fetch'] = time.time() - t
+            return res
+
+        async def _timed_graph():
+            t = time.time()
+            res = await nm._fetch_graph_memories(user_id, message, 20)
+            recall_timings['graph_search'] = time.time() - t
+            return res
+
+        t0 = time.time()
+        coros = [_timed_vector(), _timed_profile()]
+        if nm._graph_enabled:
+            coros.append(_timed_graph())
+
+        results = await asyncio.gather(*coros, return_exceptions=True)
+        recall_timings['parallel_search'] = time.time() - t0
+
+        vector_results = results[0] if not isinstance(results[0], Exception) else []
+        user_profile = results[1] if not isinstance(results[1], Exception) else {}
+        graph_results = []
+        if nm._graph_enabled and len(results) > 2:
+            graph_results = results[2] if not isinstance(results[2], Exception) else []
+
+        # 4. 合并去重 + 图谱增强（与 nm.recall 内部逻辑一致）
+        t0 = time.time()
+
+        graph_triples = [
+            (t.get("subject", "").lower(), t.get("relation", ""), t.get("object", "").lower())
+            for t in graph_results
+            if t.get("subject") and t.get("object")
+        ]
+
+        seen_contents: set = set()
+        merged = []
+        for r in vector_results:
+            content = r.get("content", "")
+            if content not in seen_contents:
+                seen_contents.add(content)
+                entry = {**r, "source": "vector"}
+
+                # 图谱覆盖增强
+                if graph_triples:
+                    boost = 1.0
+                    content_lower = content.lower()
+                    for subj, _rel, obj in graph_triples:
+                        subj_in = subj in content_lower
+                        obj_in = obj in content_lower
+                        if subj_in and obj_in:
+                            boost += 0.5
+                        elif subj_in or obj_in:
+                            boost += 0.2
+                    boost = min(boost, 2.0)
+                    if r.get("score") is not None:
+                        entry["score"] = round(r["score"] * boost, 4)
+                    entry["graph_boost"] = round(boost, 2)
+
+                merged.append(entry)
+
+        # 图谱三元组也参与排序
+        for triple in graph_results:
+            subj = triple.get("subject", "")
+            rel = triple.get("relation", "")
+            obj = triple.get("object", "")
+            triple_content = f"{subj} → {rel} → {obj}"
+            if triple_content not in seen_contents:
+                seen_contents.add(triple_content)
+                merged.append({
+                    "content": triple_content,
+                    "score": round(float(triple.get("confidence", 0.5)), 4),
+                    "source": "graph",
+                    "memory_type": "graph_fact",
+                })
+
+        merged.sort(key=lambda x: x.get("score", 0), reverse=True)
+
         graph_context = [
             f"{r.get('subject')} → {r.get('relation')} → {r.get('object')}"
             for r in graph_results
             if r.get("subject") and r.get("relation") and r.get("object")
         ]
+        recall_timings['merge'] = time.time() - t0
 
-        # 获取用户画像（kv store）
-        t0 = time.time()
-        try:
-            profile_items = await nm.kv.list(user_id, "profile")
-            user_profile = {item.key: item.value for item in profile_items}
-        except Exception:
-            user_profile = {}
-        recall_timings['profile_fetch'] = time.time() - t0
-
-        recall_timings['merged_count'] = len(merged)
+        recall_timings['vector_count'] = len(vector_results)
         recall_timings['graph_count'] = len(graph_results)
 
         if timings is not None:

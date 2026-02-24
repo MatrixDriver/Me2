@@ -36,22 +36,21 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_DAYS: int = 7
 
-    # LLM - DeepSeek
-    DEEPSEEK_API_KEY: str = ""  # 需要配置
-    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
-    DEEPSEEK_MODEL: str = "deepseek-chat"
+    # LLM (OpenRouter - DeepSeek)
+    DEEPSEEK_API_KEY: str = ""  # OpenRouter API Key，需要配置
+    DEEPSEEK_BASE_URL: str = "https://openrouter.ai/api/v1"
+    DEEPSEEK_MODEL: str = "deepseek/deepseek-v3.2"
 
-    # OpenAI API (用于 Embedding，可选)
-    OPENAI_API_KEY: str = ""  # 如果不配置，会使用 DEEPSEEK_API_KEY
-    OPENAI_BASE_URL: str = "https://api.openai.com/v1"  # 可改为 SiliconFlow 等兼容服务
+    # Embedding API (OpenRouter - OpenAI)
+    OPENAI_API_KEY: str = ""  # OpenRouter API Key，不配置则使用 DEEPSEEK_API_KEY
+    OPENAI_BASE_URL: str = "https://openrouter.ai/api/v1"
 
     # Embedding
-    EMBEDDING_PROVIDER: str = "auto"  # "local" | "remote" | "auto" (先尝试本地，失败则远程)
-    EMBEDDING_MODEL: str = "BAAI/bge-small-zh-v1.5"  # 本地模型名称
-    EMBEDDING_DIMENSIONS: int = 512  # embedding 维度，需与模型匹配
-    # 远程 Embedding 配置（当 EMBEDDING_PROVIDER=remote 或 auto fallback 时使用）
-    REMOTE_EMBEDDING_MODEL: str = "BAAI/bge-large-zh-v1.5"  # 远程 API 模型名称
-    REMOTE_EMBEDDING_DIMENSIONS: int = 1024  # 远程模型维度
+    EMBEDDING_PROVIDER: str = "remote"  # "local" | "remote" | "auto"
+    EMBEDDING_MODEL: str = "BAAI/bge-small-zh-v1.5"  # 本地模型名称（EMBEDDING_PROVIDER=local 时）
+    EMBEDDING_DIMENSIONS: int = 512  # 本地模型维度
+    REMOTE_EMBEDDING_MODEL: str = "openai/text-embedding-3-small"
+    REMOTE_EMBEDDING_DIMENSIONS: int = 1536
 
     # NeuroMemory 配置
     NEUROMEMORY_EXTRACTION_INTERVAL: int = 1  # 每条用户消息都异步提取记忆

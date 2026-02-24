@@ -5,10 +5,11 @@ Admin Service - 管理后台业务逻辑
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
-from sqlalchemy import select, func, and_, text, desc
+from sqlalchemy import select, func, and_, text, desc, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import User, Session, Message
+from app.services.auth_service import get_password_hash
 
 
 class AdminService:
@@ -288,3 +289,44 @@ class AdminService:
             "is_admin": user.is_admin,
             "updated_at": user.updated_at.isoformat() if user.updated_at else None,
         }
+
+    async def reset_all_data(self) -> dict[str, int]:
+        """
+        清空所有业务数据并重建默认 admin 账号。
+        按外键依赖顺序逐表清空，返回每个表删除的行数。
+        """
+        # 按外键依赖顺序：先删子表，再删父表
+        tables = [
+            "messages",
+            "sessions",
+            "conversation_sessions",
+            "conversations",
+            "embeddings",
+            "documents",
+            "graph_edges",
+            "graph_nodes",
+            "key_values",
+            "emotion_profiles",
+            "users",
+        ]
+
+        deleted: dict[str, int] = {}
+        for table in tables:
+            try:
+                result = await self.db.execute(text(f"DELETE FROM {table}"))
+                deleted[table] = result.rowcount
+            except Exception:
+                # 表可能不存在，跳过
+                deleted[table] = 0
+
+        # 重建默认 admin 账号
+        admin_user = User(
+            username="admin",
+            email="admin@me2.app",
+            hashed_password=get_password_hash("Me2Admin@2026"),
+            is_admin=True,
+        )
+        self.db.add(admin_user)
+        await self.db.commit()
+
+        return deleted

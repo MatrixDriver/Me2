@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Users, MessageCircle, Database, Network, MessagesSquare,
   Loader2, RefreshCw, Clock, Cpu, Activity, Zap,
-  AlertTriangle, Server, BarChart3, Brain,
+  AlertTriangle, Server, BarChart3, Brain, Trash2,
 } from 'lucide-react';
 import StatsCard from '@/components/admin/StatsCard';
 
@@ -61,6 +61,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<Record<string, number> | null>(null);
+  const [resetError, setResetError] = useState('');
 
   const fetchAll = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -90,6 +95,31 @@ export default function AdminDashboard() {
       setRefreshing(false);
     }
   }, []);
+
+  const handleResetAll = useCallback(async () => {
+    setResetting(true);
+    setResetError('');
+    setResetResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/admin/reset-all`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: '请求失败' }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setResetResult(data.deleted);
+      setResetConfirmText('');
+      // 刷新仪表盘数据
+      fetchAll();
+    } catch (e: any) {
+      setResetError(e.message || '重置失败');
+    } finally {
+      setResetting(false);
+    }
+  }, [fetchAll]);
 
   useEffect(() => {
     fetchAll();
@@ -368,6 +398,118 @@ export default function AdminDashboard() {
       {!stats && !health && !apiStats && !llmStats && (
         <div className="text-center py-20 text-muted-foreground">
           加载数据失败
+        </div>
+      )}
+
+      {/* 危险操作 */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium text-red-400 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4" />
+          危险操作
+        </h2>
+        <div className="border border-red-500/30 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">重置所有数据</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                删除所有用户、会话、消息、记忆、图谱等数据，重建默认 admin 账号
+              </p>
+            </div>
+            <button
+              onClick={() => { setShowResetModal(true); setResetConfirmText(''); setResetError(''); setResetResult(null); }}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-2 shrink-0"
+            >
+              <Trash2 className="w-4 h-4" />
+              重置所有数据
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 重置确认弹窗 */}
+      {showResetModal && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => { if (!resetting) { setShowResetModal(false); } }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="bg-[hsl(var(--card))] border border-white/10 rounded-xl shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-900/50 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className="text-base font-semibold text-foreground">确认重置所有数据</h3>
+            </div>
+
+            {resetResult ? (
+              <div className="space-y-3">
+                <p className="text-sm text-green-400 font-medium">重置完成！已删除数据：</p>
+                <div className="bg-black/20 rounded-lg p-3 space-y-1">
+                  {Object.entries(resetResult).map(([table, count]) => (
+                    <div key={table} className="flex justify-between text-xs">
+                      <span className="text-muted-foreground font-mono">{table}</span>
+                      <span className="text-foreground tabular-nums">{count} 条</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">默认 admin 账号已重建（admin / Me2Admin@2026）</p>
+                <button
+                  onClick={() => setShowResetModal(false)}
+                  className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-foreground hover:bg-white/20 transition-colors"
+                >
+                  关闭
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground mb-2">
+                  此操作将永久删除以下所有数据：
+                </p>
+                <ul className="text-sm text-muted-foreground/80 mb-4 space-y-1 list-disc list-inside">
+                  <li>所有用户账号</li>
+                  <li>所有会话和消息</li>
+                  <li>所有记忆条目和文档</li>
+                  <li>知识图谱节点和边</li>
+                  <li>情感档案和键值数据</li>
+                </ul>
+                <p className="text-sm text-muted-foreground mb-3">
+                  操作完成后将自动重建默认 admin 账号。请在下方输入 <span className="font-mono font-bold text-red-400">RESET</span> 确认：
+                </p>
+                <input
+                  type="text"
+                  value={resetConfirmText}
+                  onChange={(e) => setResetConfirmText(e.target.value)}
+                  placeholder="输入 RESET 确认"
+                  className="w-full px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-foreground text-sm font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 mb-3"
+                  disabled={resetting}
+                />
+                {resetError && (
+                  <p className="text-sm text-red-400 mb-3">{resetError}</p>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowResetModal(false)}
+                    disabled={resetting}
+                    className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-foreground hover:bg-white/20 transition-colors disabled:opacity-50"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleResetAll}
+                    disabled={resetting || resetConfirmText !== 'RESET'}
+                    className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {resetting && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {resetting ? '重置中...' : '确认重置'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

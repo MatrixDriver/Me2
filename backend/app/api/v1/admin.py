@@ -72,6 +72,18 @@ async def update_user(
     return result
 
 
+# --- Reset ---
+
+@router.delete("/reset-all")
+async def reset_all_data(
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    svc = AdminService(db)
+    deleted = await svc.reset_all_data()
+    return {"deleted": deleted}
+
+
 # --- System ---
 
 @router.get("/system/health")

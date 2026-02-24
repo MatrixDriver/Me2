@@ -46,6 +46,30 @@ async def lifespan(app: FastAPI):
     logger.info("📦 初始化数据库...")
     await init_db()
 
+    # 1.5 确保默认 admin 账号存在
+    try:
+        from sqlalchemy import select
+        from app.db.database import async_session
+        from app.db.models import User
+        from app.services.auth_service import get_password_hash
+
+        async with async_session() as session:
+            result = await session.execute(select(User).where(User.username == "admin"))
+            if not result.scalar_one_or_none():
+                admin_user = User(
+                    username="admin",
+                    email="admin@me2.app",
+                    hashed_password=get_password_hash("Me2Admin@2026"),
+                    is_admin=True,
+                )
+                session.add(admin_user)
+                await session.commit()
+                logger.info("✅ 默认 admin 账号已创建")
+            else:
+                logger.info("ℹ️  admin 账号已存在，跳过创建")
+    except Exception as e:
+        logger.warning(f"⚠️  创建默认 admin 失败: {e}")
+
     # 2. 初始化 NeuroMemory
     logger.info("🧠 初始化 NeuroMemory...")
     try:

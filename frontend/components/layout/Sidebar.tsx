@@ -1,11 +1,14 @@
 'use client';
 
-import { MessageCircle, Database, Settings } from 'lucide-react';
+import { MessageCircle, Database, Settings, Shield } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import UserMenu from './UserMenu';
 import VersionBadge from '@/components/VersionBadge';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Sidebar() {
+  const { isAdmin } = useAuth();
+
   return (
     <aside className="hidden md:flex md:flex-col md:w-60 glass border-r border-white/5 h-screen sticky top-0">
       {/* Logo */}
@@ -20,6 +23,7 @@ export default function Sidebar() {
         <SidebarItem href="/" icon={MessageCircle} label="聊天" />
         <SidebarItem href="/memories" icon={Database} label="记忆" />
         <SidebarItem href="/settings" icon={Settings} label="设置" />
+        {isAdmin && <SidebarItem href="/admin" icon={Shield} label="管理" />}
       </nav>
 
       {/* User */}

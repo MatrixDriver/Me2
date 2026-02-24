@@ -11,11 +11,12 @@ import {
   LogOut,
   X,
   Settings,
+  Shield,
 } from 'lucide-react';
 
 export default function MobileNav() {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, isAdmin } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isActive = (href: string) => pathname === href;
@@ -27,6 +28,7 @@ export default function MobileNav() {
 
   const drawerItems = [
     { href: '/settings', icon: Settings, label: '设置' },
+    ...(isAdmin ? [{ href: '/admin', icon: Shield, label: '管理' }] : []),
   ];
 
   return (

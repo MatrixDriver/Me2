@@ -39,12 +39,6 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
   const [showModel, setShowModel] = useState(false);
 
   const timings = debugInfo.timings || {};
-  const totalTime = (timings.total || 0) * 1000;
-
-  const getPercentage = (time?: number) => {
-    if (!time || !timings.total) return 0;
-    return (time / timings.total) * 100;
-  };
 
   const performanceSteps = [
     { key: 'fetch_history', label: '获取历史', color: 'bg-blue-500' },
@@ -56,6 +50,19 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
     { key: 'sync_neuromemory', label: '同步记忆', color: 'bg-pink-500' },
   ];
 
+  // 从各步骤求和计算总耗时，避免依赖后端 total 字段
+  const stepsSum = performanceSteps.reduce((sum, step) => {
+    const v = Number(timings[step.key as keyof typeof timings]) || 0;
+    return sum + v;
+  }, 0);
+  const effectiveTotal = timings.total || stepsSum;
+  const totalTime = effectiveTotal * 1000;
+
+  const getPercentage = (time?: number) => {
+    if (!time || !effectiveTotal) return 0;
+    return (time / effectiveTotal) * 100;
+  };
+
   const slowestKey = performanceSteps.reduce((maxKey, step) => {
     const t = Number(timings[step.key as keyof typeof timings]) || 0;
     const mt = Number(timings[maxKey as keyof typeof timings]) || 0;
@@ -63,7 +70,7 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
   }, performanceSteps[0].key);
 
   return (
-    <div className="mt-2 border-t border-white/5 pt-2 space-y-1.5 text-[11px]">
+    <div className="mt-2 border-t border-white/10 pt-2 space-y-1.5 text-[11px]">
       {/* 耗时分解 - 默认展开 */}
       <div className="space-y-1">
         {performanceSteps.map((step) => {
@@ -78,22 +85,22 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
           return (
             <div key={step.key}>
               <div className="flex items-center gap-2">
-                <span className={`w-[5.5em] text-right shrink-0 ${isSlowest ? 'text-red-400/80' : 'text-muted-foreground/50'}`}>
+                <span className={`w-[5.5em] text-right shrink-0 ${isSlowest ? 'text-red-400' : 'text-muted-foreground/70'}`}>
                   {step.label}
                 </span>
-                <div className="flex-1 bg-white/5 rounded-full h-1 overflow-hidden">
+                <div className="flex-1 bg-white/10 rounded-full h-1 overflow-hidden">
                   <div
-                    className={`h-full ${step.color} ${isSlowest ? 'opacity-80' : 'opacity-50'} transition-all duration-500`}
+                    className={`h-full ${step.color} ${isSlowest ? 'opacity-90' : 'opacity-65'} transition-all duration-500`}
                     style={{ width: `${Math.max(percentage, 2)}%` }}
                   />
                 </div>
-                <span className={`font-mono text-[10px] w-12 text-right shrink-0 ${isSlowest ? 'text-red-400/80' : 'text-muted-foreground/40'}`}>
+                <span className={`font-mono text-[10px] w-12 text-right shrink-0 ${isSlowest ? 'text-red-400' : 'text-muted-foreground/60'}`}>
                   {ms.toFixed(0)}ms
                 </span>
               </div>
               {/* 记忆召回子阶段 */}
               {rd && (
-                <div className="ml-[6.5em] mt-0.5 text-[10px] text-muted-foreground/40">
+                <div className="ml-[6.5em] mt-0.5 text-[10px] text-muted-foreground/60">
                   <div className="flex items-center gap-2 flex-wrap">
                     {rd.vector_count !== undefined ? <span>{rd.vector_count}条向量</span> : null}
                     {(rd.graph_count ?? 0) > 0 ? <span>· {rd.graph_count}条图谱</span> : null}
@@ -106,7 +113,7 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
       </div>
 
       {/* 总计 + 历史条数 */}
-      <div className="flex items-center gap-3 text-muted-foreground/60">
+      <div className="flex items-center gap-3 text-muted-foreground/80">
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
           总计 {totalTime.toFixed(0)}ms
@@ -120,10 +127,10 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
       </div>
 
       {/* Prompt 折叠 */}
-      <div className="pt-1 border-t border-white/5">
+      <div className="pt-1 border-t border-white/10">
         <button
           onClick={() => setShowPrompt(!showPrompt)}
-          className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+          className="flex items-center gap-1 text-[10px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
         >
           <Code className="w-3 h-3" />
           Prompt
@@ -134,15 +141,15 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
         {showPrompt && debugInfo.messages && (
           <div className="mt-1 space-y-1 max-h-80 overflow-y-auto">
             {debugInfo.messages.map((msg, idx) => (
-              <div key={idx} className="bg-white/5 rounded p-1.5">
+              <div key={idx} className="bg-white/8 rounded p-1.5">
                 <span className={`text-[9px] font-medium px-1 py-0.5 rounded ${
-                  msg.role === 'system' ? 'bg-purple-500/15 text-purple-400/70' :
-                  msg.role === 'user' ? 'bg-blue-500/15 text-blue-400/70' :
-                  'bg-green-500/15 text-green-400/70'
+                  msg.role === 'system' ? 'bg-purple-500/20 text-purple-400/90' :
+                  msg.role === 'user' ? 'bg-blue-500/20 text-blue-400/90' :
+                  'bg-green-500/20 text-green-400/90'
                 }`}>
                   {msg.role}
                 </span>
-                <pre className="mt-1 whitespace-pre-wrap text-muted-foreground/60 font-mono text-[10px] leading-relaxed">
+                <pre className="mt-1 whitespace-pre-wrap text-muted-foreground/80 font-mono text-[10px] leading-relaxed">
                   {msg.content}
                 </pre>
               </div>
@@ -153,10 +160,10 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
 
       {/* 模型参数折叠 */}
       {debugInfo.model && (
-        <div className="border-t border-white/5 pt-1">
+        <div className="border-t border-white/10 pt-1">
           <button
             onClick={() => setShowModel(!showModel)}
-            className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
           >
             <Zap className="w-3 h-3" />
             模型参数
@@ -164,17 +171,17 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
           </button>
 
           {showModel && (
-            <div className="mt-1 grid grid-cols-3 gap-1.5 text-muted-foreground/60">
+            <div className="mt-1 grid grid-cols-3 gap-1.5 text-muted-foreground/80">
               <div>
-                <div className="text-[9px] text-muted-foreground/40">Model</div>
+                <div className="text-[9px] text-muted-foreground/60">Model</div>
                 <div className="font-mono text-[10px]">{debugInfo.model}</div>
               </div>
               <div>
-                <div className="text-[9px] text-muted-foreground/40">Temp</div>
+                <div className="text-[9px] text-muted-foreground/60">Temp</div>
                 <div className="font-mono text-[10px]">{debugInfo.temperature}</div>
               </div>
               <div>
-                <div className="text-[9px] text-muted-foreground/40">Tokens</div>
+                <div className="text-[9px] text-muted-foreground/60">Tokens</div>
                 <div className="font-mono text-[10px]">{debugInfo.max_tokens}</div>
               </div>
             </div>

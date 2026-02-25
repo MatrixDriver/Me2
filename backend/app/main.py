@@ -159,6 +159,48 @@ async def lifespan(app: FastAPI):
 
         from app.services.metrics_collector import MetricsCollector
 
+        # 包装 embedding provider，记录调用指标
+        class _MetricsEmbedding:
+            """Proxy that records embedding metrics to MetricsCollector."""
+            def __init__(self, inner):
+                self._inner = inner
+
+            @property
+            def dims(self) -> int:
+                return self._inner.dims
+
+            async def embed(self, text: str) -> list[float]:
+                import time as _t
+                start = _t.time()
+                try:
+                    result = await self._inner.embed(text)
+                    MetricsCollector().record_embedding(
+                        getattr(self._inner, 'model', 'unknown'), 1,
+                        (_t.time() - start) * 1000, True)
+                    return result
+                except Exception:
+                    MetricsCollector().record_embedding(
+                        getattr(self._inner, 'model', 'unknown'), 1,
+                        (_t.time() - start) * 1000, False)
+                    raise
+
+            async def embed_batch(self, texts: list[str]) -> list[list[float]]:
+                import time as _t
+                start = _t.time()
+                try:
+                    result = await self._inner.embed_batch(texts)
+                    MetricsCollector().record_embedding(
+                        getattr(self._inner, 'model', 'unknown'), len(texts),
+                        (_t.time() - start) * 1000, True)
+                    return result
+                except Exception:
+                    MetricsCollector().record_embedding(
+                        getattr(self._inner, 'model', 'unknown'), len(texts),
+                        (_t.time() - start) * 1000, False)
+                    raise
+
+        embedding_provider = _MetricsEmbedding(embedding_provider)
+
         def _on_extraction(info: dict):
             MetricsCollector().record_extraction(
                 user_id=info.get("user_id", ""),

@@ -341,35 +341,30 @@ export default function AdminDashboard() {
             记忆召回
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {chatStats && (
-              <StatsCard
-                title="召回延迟"
-                value={`${chatStats.recall_avg_ms.toFixed(0)} ms`}
-                icon={Timer}
-                trend={[{ label: '对话数', value: chatStats.total_chats }]}
-              />
-            )}
-            {embeddingStats && (
-              <>
-                <StatsCard
-                  title="Embedding 调用"
-                  value={embeddingStats.total_calls}
-                  icon={Cpu}
-                  trend={[{ label: '今日', value: embeddingStats.today_calls }]}
-                />
-                <StatsCard
-                  title="Embedding 耗时"
-                  value={`${embeddingStats.avg_duration_ms.toFixed(0)} ms`}
-                  icon={Clock}
-                  trend={[{ label: '文本数', value: embeddingStats.total_texts }]}
-                />
-                <StatsCard
-                  title="Embedding 失败率"
-                  value={`${(embeddingStats.failure_rate * 100).toFixed(1)}%`}
-                  icon={Activity}
-                />
-              </>
-            )}
+            <StatsCard
+              title="召回延迟"
+              value={`${(chatStats?.recall_avg_ms ?? 0).toFixed(0)} ms`}
+              icon={Timer}
+              trend={[{ label: '对话数', value: chatStats?.total_chats ?? 0 }]}
+            />
+            <StatsCard
+              title="Embedding 调用"
+              value={embeddingStats?.total_calls ?? 0}
+              icon={Cpu}
+              trend={[{ label: '今日', value: embeddingStats?.today_calls ?? 0 }]}
+            />
+            <StatsCard
+              title="Embedding 耗时"
+              value={`${(embeddingStats?.avg_duration_ms ?? 0).toFixed(0)} ms`}
+              icon={Clock}
+              trend={[{ label: '向量文本数', value: embeddingStats?.total_texts ?? 0 }]}
+            />
+            <StatsCard
+              title="Embedding 失败率"
+              value={`${((embeddingStats?.failure_rate ?? 0) * 100).toFixed(1)}%`}
+              icon={Activity}
+              trend={[{ label: '总调用', value: embeddingStats?.total_calls ?? 0 }]}
+            />
           </div>
         </section>
       )}

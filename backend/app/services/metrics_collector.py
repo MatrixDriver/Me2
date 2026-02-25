@@ -1,11 +1,20 @@
 """In-memory metrics collector for API and LLM monitoring.
 
-Uses a ring buffer of data points (last 24h). Resets on server restart.
+Uses a ring buffer of data points. Persists to PostgreSQL on shutdown
+and reloads on startup so metrics survive restarts.
 """
+import json
+import logging
 import time
 import threading
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+# Metric type name → dataclass mapping (used by load)
+_METRIC_CLASSES: dict[str, type] = {}
 
 
 @dataclass
@@ -61,8 +70,17 @@ class ExtractionMetric:
     timestamp: float = field(default_factory=time.time)
 
 
+_METRIC_CLASSES = {
+    "api": ApiMetric,
+    "llm": LLMMetric,
+    "embedding": EmbeddingMetric,
+    "chat": ChatMetric,
+    "extraction": ExtractionMetric,
+}
+
+
 class MetricsCollector:
-    """Singleton in-memory metrics store."""
+    """Singleton in-memory metrics store with DB persistence."""
 
     _instance = None
     _lock = threading.Lock()
@@ -256,3 +274,85 @@ class MetricsCollector:
             "avg_duration_ms": round(avg_duration, 1),
             "failure_rate": round(failures / len(recent), 4) if recent else 0,
         }
+
+    # ---- Persistence ----
+
+    def _serialize(self) -> dict[str, Any]:
+        """Serialize all metric deques to a JSON-safe dict."""
+        return {
+            "api": [asdict(m) for m in self._api_metrics],
+            "llm": [asdict(m) for m in self._llm_metrics],
+            "embedding": [asdict(m) for m in self._embedding_metrics],
+            "chat": [asdict(m) for m in self._chat_metrics],
+            "extraction": [asdict(m) for m in self._extraction_metrics],
+            "start_time": self._start_time,
+        }
+
+    def _deserialize(self, data: dict[str, Any]):
+        """Load metrics from a deserialized dict, merging with existing."""
+        mapping = {
+            "api": self._api_metrics,
+            "llm": self._llm_metrics,
+            "embedding": self._embedding_metrics,
+            "chat": self._chat_metrics,
+            "extraction": self._extraction_metrics,
+        }
+        for key, dq in mapping.items():
+            cls = _METRIC_CLASSES.get(key)
+            for item in data.get(key, []):
+                if cls:
+                    dq.append(cls(**item))
+        # Restore original start_time so uptime is cumulative
+        saved_start = data.get("start_time")
+        if saved_start and saved_start < self._start_time:
+            self._start_time = saved_start
+
+    async def save_to_db(self):
+        """Persist current metrics to PostgreSQL."""
+        from app.db.database import AsyncSessionLocal
+        from sqlalchemy import text
+
+        payload = json.dumps(self._serialize())
+        total = sum(
+            len(dq) for dq in [
+                self._api_metrics, self._llm_metrics, self._embedding_metrics,
+                self._chat_metrics, self._extraction_metrics,
+            ]
+        )
+        try:
+            async with AsyncSessionLocal() as session:
+                await session.execute(text(
+                    "INSERT INTO metrics_snapshots (id, data, saved_at) "
+                    "VALUES (1, :data, NOW()) "
+                    "ON CONFLICT (id) DO UPDATE SET data = :data, saved_at = NOW()"
+                ), {"data": payload})
+                await session.commit()
+            logger.info("📊 指标已保存到数据库 (%d 条记录)", total)
+        except Exception as e:
+            logger.warning("⚠️  保存指标失败: %s", e)
+
+    async def load_from_db(self):
+        """Load persisted metrics from PostgreSQL."""
+        from app.db.database import AsyncSessionLocal
+        from sqlalchemy import text
+
+        try:
+            async with AsyncSessionLocal() as session:
+                result = await session.execute(text(
+                    "SELECT data FROM metrics_snapshots WHERE id = 1"
+                ))
+                row = result.scalar_one_or_none()
+                if row is None:
+                    logger.info("📊 无历史指标数据")
+                    return
+                data = json.loads(row) if isinstance(row, str) else row
+                self._deserialize(data)
+                total = sum(
+                    len(dq) for dq in [
+                        self._api_metrics, self._llm_metrics, self._embedding_metrics,
+                        self._chat_metrics, self._extraction_metrics,
+                    ]
+                )
+                logger.info("📊 已从数据库恢复指标 (%d 条记录)", total)
+        except Exception as e:
+            logger.warning("⚠️  加载指标失败: %s", e)

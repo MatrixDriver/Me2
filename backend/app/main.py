@@ -51,6 +51,12 @@ async def lifespan(app: FastAPI):
         from sqlalchemy import text
         from app.db.database import engine
         migrations = [
+            # metrics_snapshots 表
+            """CREATE TABLE IF NOT EXISTS metrics_snapshots (
+                id INTEGER PRIMARY KEY,
+                data JSONB NOT NULL,
+                saved_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )""",
             # users 表
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE NOT NULL",
             # emotion_profiles 表 (neuromemory 0.6.0 新增列)
@@ -98,6 +104,13 @@ async def lifespan(app: FastAPI):
                 logger.info("ℹ️  admin 账号已存在，跳过创建")
     except Exception as e:
         logger.warning(f"⚠️  创建默认 admin 失败: {e}")
+
+    # 1.7 恢复历史指标
+    try:
+        from app.services.metrics_collector import MetricsCollector
+        await MetricsCollector().load_from_db()
+    except Exception as e:
+        logger.warning(f"⚠️  恢复指标失败: {e}")
 
     # 2. 初始化 NeuroMemory
     logger.info("🧠 初始化 NeuroMemory...")
@@ -194,6 +207,13 @@ async def lifespan(app: FastAPI):
 
     # ========== 关闭时 ==========
     logger.info("👋 Me2 关闭中...")
+
+    # 保存指标到数据库
+    try:
+        from app.services.metrics_collector import MetricsCollector
+        await MetricsCollector().save_to_db()
+    except Exception as e:
+        logger.warning(f"⚠️  保存指标失败: {e}")
 
     # 关闭 NeuroMemory
     if nm:

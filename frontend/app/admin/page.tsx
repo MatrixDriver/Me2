@@ -268,21 +268,21 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
               title="首字时间 (TTFT)"
-              value={`${chatStats.ttft_avg_ms.toFixed(0)} ms`}
+              value={`${(chatStats.ttft_avg_ms / 1000).toFixed(2)} s`}
               icon={Timer}
-              trend={[{ label: 'P95', value: `${chatStats.ttft_p95_ms.toFixed(0)} ms` }]}
+              trend={[{ label: 'P95', value: `${(chatStats.ttft_p95_ms / 1000).toFixed(2)} s` }]}
             />
             <StatsCard
-              title="响应总时间"
-              value={`${chatStats.total_avg_ms.toFixed(0)} ms`}
+              title="平均响应时间"
+              value={`${(chatStats.total_avg_ms / 1000).toFixed(2)} s`}
               icon={Clock}
-              trend={[{ label: 'P95', value: `${chatStats.total_p95_ms.toFixed(0)} ms` }]}
+              trend={[{ label: 'P95', value: `${(chatStats.total_p95_ms / 1000).toFixed(2)} s` }]}
             />
             <StatsCard
               title="LLM 首字时间"
-              value={`${chatStats.llm_ttft_avg_ms.toFixed(0)} ms`}
+              value={`${(chatStats.llm_ttft_avg_ms / 1000).toFixed(2)} s`}
               icon={Cpu}
-              trend={[{ label: 'P95', value: `${chatStats.llm_ttft_p95_ms.toFixed(0)} ms` }]}
+              trend={[{ label: 'P95', value: `${(chatStats.llm_ttft_p95_ms / 1000).toFixed(2)} s` }]}
             />
             <StatsCard
               title="生成速度"

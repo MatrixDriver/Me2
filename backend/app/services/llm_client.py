@@ -100,6 +100,7 @@ class LLMClient:
                 async def stream_generator():
                     full_response = ""
                     llm_start = time.time()
+                    first_token_time = None
                     prompt_tokens = 0
                     completion_tokens = 0
                     try:
@@ -111,10 +112,13 @@ class LLMClient:
                                 continue
                             if chunk.choices[0].delta.content:
                                 content = chunk.choices[0].delta.content
+                                if first_token_time is None:
+                                    first_token_time = time.time()
                                 full_response += content
                                 yield content
 
                         llm_duration = (time.time() - llm_start) * 1000
+                        llm_ttft_ms = ((first_token_time - llm_start) * 1000) if first_token_time else llm_duration
                         MetricsCollector().record_llm(
                             model=kwargs.get("model", "unknown"),
                             prompt_tokens=prompt_tokens,
@@ -124,6 +128,7 @@ class LLMClient:
                         )
                     except Exception:
                         llm_duration = (time.time() - llm_start) * 1000
+                        llm_ttft_ms = llm_duration
                         MetricsCollector().record_llm(
                             model=kwargs.get("model", "unknown"),
                             prompt_tokens=prompt_tokens,
@@ -133,20 +138,24 @@ class LLMClient:
                         )
                         raise
 
-                    # 流结束后返回调试信息（如果需要）
+                    # Always yield done dict with LLM metrics
+                    done_payload = {
+                        "done": True,
+                        "llm_ttft_ms": round(llm_ttft_ms, 1),
+                        "llm_duration_ms": round(llm_duration, 1),
+                        "completion_tokens": completion_tokens,
+                    }
                     if return_debug_info:
-                        yield {
-                            "done": True,
-                            "debug_info": {
-                                "model": self.model,
-                                "temperature": temperature,
-                                "max_tokens": max_tokens,
-                                "messages": messages,
-                                "message_count": len(messages),
-                                "system_prompt": system_prompt,
-                                "history_count": len(history_messages) if history_messages else 0
-                            }
+                        done_payload["debug_info"] = {
+                            "model": self.model,
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                            "messages": messages,
+                            "message_count": len(messages),
+                            "system_prompt": system_prompt,
+                            "history_count": len(history_messages) if history_messages else 0
                         }
+                    yield done_payload
 
                 return stream_generator()
 

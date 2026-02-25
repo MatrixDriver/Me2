@@ -144,6 +144,24 @@ async def lifespan(app: FastAPI):
                     dimensions=dimensions,
                 )
 
+        from app.services.metrics_collector import MetricsCollector
+
+        def _on_extraction(info: dict):
+            MetricsCollector().record_extraction(
+                user_id=info.get("user_id", ""),
+                duration_s=info.get("duration", 0),
+                facts_extracted=info.get("facts_extracted", 0),
+                episodes_extracted=info.get("episodes_extracted", 0),
+                triples_extracted=info.get("triples_extracted", 0),
+                messages_processed=info.get("messages_processed", 0),
+            )
+            logger.debug(
+                "记忆提取完成: user=%s duration=%.2fs facts=%d episodes=%d triples=%d",
+                info.get("user_id"), info.get("duration", 0),
+                info.get("facts_extracted", 0), info.get("episodes_extracted", 0),
+                info.get("triples_extracted", 0),
+            )
+
         nm = NeuroMemory(
             database_url=settings.DATABASE_URL,
             embedding=embedding_provider,
@@ -161,6 +179,7 @@ async def lifespan(app: FastAPI):
             reflection_interval=settings.NEUROMEMORY_REFLECTION_INTERVAL,
             graph_enabled=settings.NEUROMEMORY_GRAPH_ENABLED,
             echo=settings.DEBUG,
+            on_extraction=_on_extraction,
         )
         await nm.init()
         logger.info("✅ NeuroMemory 初始化完成")

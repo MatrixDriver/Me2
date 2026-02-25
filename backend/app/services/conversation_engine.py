@@ -6,6 +6,7 @@ from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.services.llm_client import LLMClient
+from app.services.metrics_collector import MetricsCollector
 from app.db.models import Message, Session
 
 logger = logging.getLogger(__name__)
@@ -364,10 +365,15 @@ class ConversationEngine:
             )
 
             full_response = ""
+            first_token_time = None
+            llm_done_info = {}
             async for chunk in stream_generator:
                 if isinstance(chunk, dict) and chunk.get("done"):
+                    llm_done_info = chunk
                     break
                 else:
+                    if first_token_time is None:
+                        first_token_time = time.time()
                     full_response += chunk
                     yield chunk
 
@@ -423,6 +429,25 @@ class ConversationEngine:
 
             timings['total'] = time.time() - start_time
 
+            # === Record chat UX metrics ===
+            ttft_ms = ((first_token_time - start_time) * 1000) if first_token_time else timings['total'] * 1000
+            total_ms = timings['total'] * 1000
+            llm_ttft_ms = llm_done_info.get("llm_ttft_ms", 0)
+            completion_tokens = llm_done_info.get("completion_tokens", 0)
+            llm_duration_ms = llm_done_info.get("llm_duration_ms", 0)
+            token_throughput = (completion_tokens / (llm_duration_ms / 1000)) if llm_duration_ms > 0 else 0
+            recall_ms = timings.get('recall_memories', 0) * 1000
+
+            MetricsCollector().record_chat(
+                ttft_ms=ttft_ms,
+                total_ms=total_ms,
+                llm_ttft_ms=llm_ttft_ms,
+                completion_tokens=completion_tokens,
+                token_throughput=token_throughput,
+                recall_ms=recall_ms,
+                success=True,
+            )
+
             # === 完成信号 ===
             recalled_summaries = [
                 {
@@ -461,6 +486,12 @@ class ConversationEngine:
 
         except Exception as e:
             logger.error(f"流式对话处理失败: {e}", exc_info=True)
+            total_ms = (time.time() - start_time) * 1000 if 'start_time' in dir() else 0
+            MetricsCollector().record_chat(
+                ttft_ms=0, total_ms=total_ms, llm_ttft_ms=0,
+                completion_tokens=0, token_throughput=0,
+                recall_ms=0, success=False,
+            )
             await db.rollback()
             yield {
                 "type": "error",

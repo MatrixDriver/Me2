@@ -159,6 +159,24 @@ async def get_llm_stats(
     return collector.get_llm_stats(last_seconds=hours * 3600)
 
 
+@router.get("/system/extraction-stats")
+async def get_extraction_stats(
+    hours: int = 24,
+    admin: User = Depends(require_admin),
+):
+    collector = MetricsCollector()
+    return collector.get_extraction_stats(last_seconds=hours * 3600)
+
+
+@router.get("/system/chat-stats")
+async def get_chat_stats(
+    hours: int = 24,
+    admin: User = Depends(require_admin),
+):
+    collector = MetricsCollector()
+    return collector.get_chat_stats(last_seconds=hours * 3600)
+
+
 @router.get("/system/embedding-stats")
 async def get_embedding_stats(
     hours: int = 24,

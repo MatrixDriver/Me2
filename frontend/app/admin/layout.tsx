@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, BarChart3, Database, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart3, Database, Settings, ArrowLeft } from 'lucide-react';
 import AdminRoute from '@/components/admin/AdminRoute';
 
 const NAV_ITEMS = [
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/admin/users', label: '用户', icon: Users },
   { href: '/admin/usage', label: '用量统计', icon: BarChart3 },
   { href: '/admin/database', label: '数据管理', icon: Database },
+  { href: '/admin/settings', label: '设置', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

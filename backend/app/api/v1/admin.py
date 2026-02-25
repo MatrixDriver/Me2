@@ -117,6 +117,68 @@ async def reset_all_data(
 
 # --- System ---
 
+# --- NM Config ---
+
+class NMConfigUpdate(BaseModel):
+    reflection_interval: int | None = None
+    auto_extract: bool | None = None
+    graph_enabled: bool | None = None
+
+
+@router.get("/system/nm-config")
+async def get_nm_config(
+    admin: User = Depends(require_admin),
+):
+    from app.main import nm
+    if nm is None:
+        raise HTTPException(status_code=503, detail="NeuroMemory not initialized")
+    extraction = nm.extraction
+    return {
+        "reflection_interval": nm.reflection_interval,
+        "auto_extract": nm.auto_extract,
+        "graph_enabled": nm.graph_enabled,
+        "extraction": {
+            "message_interval": extraction.message_interval,
+            "idle_timeout": extraction.idle_timeout,
+        },
+    }
+
+
+@router.put("/system/nm-config")
+async def update_nm_config(
+    body: NMConfigUpdate,
+    admin: User = Depends(require_admin),
+):
+    from app.main import nm
+    if nm is None:
+        raise HTTPException(status_code=503, detail="NeuroMemory not initialized")
+    updated = {}
+    if body.reflection_interval is not None:
+        nm.reflection_interval = body.reflection_interval
+        updated["reflection_interval"] = nm.reflection_interval
+    if body.auto_extract is not None:
+        nm.auto_extract = body.auto_extract
+        updated["auto_extract"] = nm.auto_extract
+    if body.graph_enabled is not None:
+        nm.graph_enabled = body.graph_enabled
+        updated["graph_enabled"] = nm.graph_enabled
+    return {"updated": updated}
+
+
+@router.post("/users/{user_id}/reflect")
+async def trigger_user_reflect(
+    user_id: str,
+    admin: User = Depends(require_admin),
+):
+    from app.main import nm
+    if nm is None:
+        raise HTTPException(status_code=503, detail="NeuroMemory not initialized")
+    await nm.reflect(user_id, background=True)
+    return {"status": "triggered", "user_id": user_id}
+
+
+# --- System ---
+
 @router.get("/system/health")
 async def get_system_health(
     admin: User = Depends(require_admin),

@@ -178,6 +178,7 @@ async def lifespan(app: FastAPI):
             ),
             reflection_interval=settings.NEUROMEMORY_REFLECTION_INTERVAL,
             graph_enabled=settings.NEUROMEMORY_GRAPH_ENABLED,
+            auto_extract=True,
             echo=settings.DEBUG,
             on_extraction=_on_extraction,
         )

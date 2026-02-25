@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Users, MessageCircle, Database, MessagesSquare,
   Loader2, RefreshCw, Clock, Cpu, Activity,
-  Server, BarChart3, Gauge, Timer, Zap, Brain,
+  Server, BarChart3, Gauge, Timer, Zap, Brain, Search,
 } from 'lucide-react';
 import StatsCard from '@/components/admin/StatsCard';
 
@@ -52,6 +52,14 @@ interface ExtractionStats {
   total_messages_processed: number;
 }
 
+interface EmbeddingStats {
+  total_calls: number;
+  today_calls: number;
+  total_texts: number;
+  avg_duration_ms: number;
+  failure_rate: number;
+}
+
 interface HealthData {
   uptime_seconds: number;
   neuromemory_version: string;
@@ -62,6 +70,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [chatStats, setChatStats] = useState<ChatStats | null>(null);
   const [extractionStats, setExtractionStats] = useState<ExtractionStats | null>(null);
+  const [embeddingStats, setEmbeddingStats] = useState<EmbeddingStats | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,11 +80,12 @@ export default function AdminDashboard() {
     if (isManual) setRefreshing(true);
     try {
       const headers = getAuthHeaders();
-      const [dashRes, healthRes, chatStatsRes, extractionRes] = await Promise.allSettled([
+      const [dashRes, healthRes, chatStatsRes, extractionRes, embeddingRes] = await Promise.allSettled([
         fetch(`${API_BASE}/admin/dashboard`, { headers }),
         fetch(`${API_BASE}/admin/system/health`, { headers }),
         fetch(`${API_BASE}/admin/system/chat-stats?hours=24`, { headers }),
         fetch(`${API_BASE}/admin/system/extraction-stats?hours=24`, { headers }),
+        fetch(`${API_BASE}/admin/system/embedding-stats?hours=24`, { headers }),
       ]);
 
       if (dashRes.status === 'fulfilled' && dashRes.value.ok)
@@ -89,6 +99,10 @@ export default function AdminDashboard() {
       if (extractionRes.status === 'fulfilled' && extractionRes.value.ok) {
         const data = await extractionRes.value.json();
         setExtractionStats(data.total_extractions > 0 ? data : null);
+      }
+      if (embeddingRes.status === 'fulfilled' && embeddingRes.value.ok) {
+        const data = await embeddingRes.value.json();
+        setEmbeddingStats(data.total_calls > 0 ? data : null);
       }
 
       setLastRefresh(new Date());
@@ -136,6 +150,66 @@ export default function AdminDashboard() {
           </button>
         </div>
       </div>
+
+      {/* 服务状态 */}
+      {health && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Server className="w-4 h-4" />
+            服务状态
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="glass-card rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-muted-foreground text-sm">运行时间</span>
+                <Clock className="w-4 h-4 text-muted-foreground/50" />
+              </div>
+              <div className="text-2xl font-bold text-foreground">
+                {formatUptime(health.uptime_seconds)}
+              </div>
+            </div>
+
+            <div className="glass-card rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-muted-foreground text-sm">NeuroMemory</span>
+                <Cpu className="w-4 h-4 text-muted-foreground/50" />
+              </div>
+              <div className="text-2xl font-bold text-foreground">
+                v{health.neuromemory_version}
+              </div>
+            </div>
+
+            <div className="glass-card rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-muted-foreground text-sm">连接池</span>
+                <Database className="w-4 h-4 text-muted-foreground/50" />
+              </div>
+              <div className="text-2xl font-bold text-foreground">
+                {health.db_pool.checked_out}/{health.db_pool.size}
+              </div>
+              <div className="flex gap-3 mt-2">
+                <span className="text-xs text-muted-foreground/50">
+                  空闲: <span className="text-foreground/70">{health.db_pool.checked_in}</span>
+                </span>
+                <span className="text-xs text-muted-foreground/50">
+                  溢出: <span className="text-foreground/70">{health.db_pool.overflow}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-muted-foreground text-sm">状态</span>
+                <Activity className="w-4 h-4 text-muted-foreground/50" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-2xl font-bold text-green-400">正常</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 数据总览 */}
       {stats && (
@@ -214,10 +288,7 @@ export default function AdminDashboard() {
               title="生成速度"
               value={`${chatStats.throughput_avg.toFixed(1)} tok/s`}
               icon={Zap}
-              trend={[
-                { label: '今日对话', value: chatStats.today_chats },
-                { label: '召回', value: `${chatStats.recall_avg_ms.toFixed(0)} ms` },
-              ]}
+              trend={[{ label: '今日对话', value: chatStats.today_chats }]}
             />
           </div>
         </section>
@@ -262,62 +333,43 @@ export default function AdminDashboard() {
         </section>
       )}
 
-      {/* 服务状态 */}
-      {health && (
+      {/* 记忆召回 */}
+      {(chatStats || embeddingStats) && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Server className="w-4 h-4" />
-            服务状态
+            <Search className="w-4 h-4" />
+            记忆召回
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="glass-card rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">运行时间</span>
-                <Clock className="w-4 h-4 text-muted-foreground/50" />
-              </div>
-              <div className="text-2xl font-bold text-foreground">
-                {formatUptime(health.uptime_seconds)}
-              </div>
-            </div>
-
-            <div className="glass-card rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">NeuroMemory</span>
-                <Cpu className="w-4 h-4 text-muted-foreground/50" />
-              </div>
-              <div className="text-2xl font-bold text-foreground">
-                v{health.neuromemory_version}
-              </div>
-            </div>
-
-            <div className="glass-card rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">连接池</span>
-                <Database className="w-4 h-4 text-muted-foreground/50" />
-              </div>
-              <div className="text-2xl font-bold text-foreground">
-                {health.db_pool.checked_out}/{health.db_pool.size}
-              </div>
-              <div className="flex gap-3 mt-2">
-                <span className="text-xs text-muted-foreground/50">
-                  空闲: <span className="text-foreground/70">{health.db_pool.checked_in}</span>
-                </span>
-                <span className="text-xs text-muted-foreground/50">
-                  溢出: <span className="text-foreground/70">{health.db_pool.overflow}</span>
-                </span>
-              </div>
-            </div>
-
-            <div className="glass-card rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">状态</span>
-                <Activity className="w-4 h-4 text-muted-foreground/50" />
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-2xl font-bold text-green-400">正常</span>
-              </div>
-            </div>
+            {chatStats && (
+              <StatsCard
+                title="召回延迟"
+                value={`${chatStats.recall_avg_ms.toFixed(0)} ms`}
+                icon={Timer}
+                trend={[{ label: '对话数', value: chatStats.total_chats }]}
+              />
+            )}
+            {embeddingStats && (
+              <>
+                <StatsCard
+                  title="Embedding 调用"
+                  value={embeddingStats.total_calls}
+                  icon={Cpu}
+                  trend={[{ label: '今日', value: embeddingStats.today_calls }]}
+                />
+                <StatsCard
+                  title="Embedding 耗时"
+                  value={`${embeddingStats.avg_duration_ms.toFixed(0)} ms`}
+                  icon={Clock}
+                  trend={[{ label: '文本数', value: embeddingStats.total_texts }]}
+                />
+                <StatsCard
+                  title="Embedding 失败率"
+                  value={`${(embeddingStats.failure_rate * 100).toFixed(1)}%`}
+                  icon={Activity}
+                />
+              </>
+            )}
           </div>
         </section>
       )}

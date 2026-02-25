@@ -15,6 +15,7 @@ import {
   Mail,
   CalendarDays,
   Clock,
+  RotateCw,
 } from 'lucide-react';
 import StatsCard from '@/components/admin/StatsCard';
 
@@ -77,6 +78,8 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
   const [data, setData] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reflectLoading, setReflectLoading] = useState(false);
+  const [reflectResult, setReflectResult] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -122,6 +125,27 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
     );
   }
 
+  const handleReflect = async () => {
+    setReflectLoading(true);
+    setReflectResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${params.id}/reflect`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: '操作失败' }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      setReflectResult('Reflect 已触发');
+      setTimeout(() => setReflectResult(null), 3000);
+    } catch (e: any) {
+      setReflectResult(`失败: ${e.message}`);
+    } finally {
+      setReflectLoading(false);
+    }
+  };
+
   const memoryByType = data.memory_by_type ?? {};
   const memoryTotal = data.memory_count || 1;
 
@@ -155,6 +179,25 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
                 <Mail className="w-3.5 h-3.5" />
                 {data.email}
               </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={handleReflect}
+              disabled={reflectLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
+            >
+              {reflectLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RotateCw className="w-3.5 h-3.5" />
+              )}
+              {reflectLoading ? '触发中...' : '触发 Reflect'}
+            </button>
+            {reflectResult && (
+              <span className={`text-xs ${reflectResult.startsWith('失败') ? 'text-red-400' : 'text-green-400'}`}>
+                {reflectResult}
+              </span>
             )}
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground shrink-0">

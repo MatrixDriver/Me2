@@ -571,11 +571,12 @@ async def chat(
 async def chat_stream(
     request: ChatRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
 ):
     """流式聊天接口（SSE）
 
     返回 Server-Sent Events 流式响应，实时推送生成的内容。
+    注：不使用 Depends(get_db)，而是在 generator 内部管理 session，
+    确保客户端断开时连接能正确归还连接池。
 
     事件类型：
     - token: 生成的文本片段
@@ -583,53 +584,56 @@ async def chat_stream(
     - error: 错误信息
     """
     async def event_generator():
-        try:
-            # 验证或创建会话
-            session_id = request.session_id
-            is_new_session = not session_id
-            if not session_id:
-                session = Session(user_id=current_user.id)
-                db.add(session)
-                await db.flush()
-                session_id = session.id
-                logger.info(f"自动创建新会话: {session_id}")
-            else:
-                stmt = select(Session).where(
-                    Session.id == session_id,
-                    Session.user_id == current_user.id
-                )
-                result = await db.execute(stmt)
-                session = result.scalar_one_or_none()
-                if not session:
-                    yield f"data: {json.dumps({'type': 'error', 'error': '会话不存在'})}\n\n"
-                    return
+        from app.db.database import AsyncSessionLocal
 
-            # 调用流式对话引擎
-            async for chunk in conversation_engine.chat_stream(
-                user_id=current_user.id,
-                session_id=session_id,
-                message=request.message,
-                db=db,
-                debug_mode=request.debug_mode
-            ):
-                # chunk可能是字符串（token）或字典（done/error）
-                if isinstance(chunk, str):
-                    # 文本token
-                    yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
-                elif isinstance(chunk, dict):
-                    # 完成事件：注入 session_title 和 is_new_session
-                    if chunk.get("type") == "done":
-                        # 获取会话标题
-                        sess_stmt = select(Session).where(Session.id == session_id)
-                        sess_result = await db.execute(sess_stmt)
-                        sess = sess_result.scalar_one_or_none()
-                        chunk["session_title"] = sess.title if sess else None
-                        chunk["is_new_session"] = is_new_session
-                    yield f"data: {json.dumps(chunk)}\n\n"
+        async with AsyncSessionLocal() as db:
+            try:
+                # 验证或创建会话
+                session_id = request.session_id
+                is_new_session = not session_id
+                if not session_id:
+                    session = Session(user_id=current_user.id)
+                    db.add(session)
+                    await db.flush()
+                    session_id = session.id
+                    logger.info(f"自动创建新会话: {session_id}")
+                else:
+                    stmt = select(Session).where(
+                        Session.id == session_id,
+                        Session.user_id == current_user.id
+                    )
+                    result = await db.execute(stmt)
+                    session = result.scalar_one_or_none()
+                    if not session:
+                        yield f"data: {json.dumps({'type': 'error', 'error': '会话不存在'})}\n\n"
+                        return
 
-        except Exception as e:
-            logger.error(f"流式聊天失败: {e}", exc_info=True)
-            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+                # 调用流式对话引擎
+                async for chunk in conversation_engine.chat_stream(
+                    user_id=current_user.id,
+                    session_id=session_id,
+                    message=request.message,
+                    db=db,
+                    debug_mode=request.debug_mode
+                ):
+                    # chunk可能是字符串（token）或字典（done/error）
+                    if isinstance(chunk, str):
+                        # 文本token
+                        yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+                    elif isinstance(chunk, dict):
+                        # 完成事件：注入 session_title 和 is_new_session
+                        if chunk.get("type") == "done":
+                            # 获取会话标题
+                            sess_stmt = select(Session).where(Session.id == session_id)
+                            sess_result = await db.execute(sess_stmt)
+                            sess = sess_result.scalar_one_or_none()
+                            chunk["session_title"] = sess.title if sess else None
+                            chunk["is_new_session"] = is_new_session
+                        yield f"data: {json.dumps(chunk)}\n\n"
+
+            except Exception as e:
+                logger.error(f"流式聊天失败: {e}", exc_info=True)
+                yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
 
     return StreamingResponse(
         event_generator(),

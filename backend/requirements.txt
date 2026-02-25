@@ -10,7 +10,7 @@ asyncpg>=0.30.0
 alembic==1.13.1
 
 # NeuroMemory
-neuromemory==0.6.5
+neuromemory==0.6.6
 boto3>=1.34.0  # neuromemory S3 storage dependency
 email-validator>=2.0.0  # neuromemory pydantic email fields
 

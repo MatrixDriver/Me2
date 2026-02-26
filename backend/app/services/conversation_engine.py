@@ -155,7 +155,7 @@ class ConversationEngine:
             # === 7. 异步同步到 neuromem（不阻塞响应）===
             async def _sync_neuromem():
                 try:
-                    await nm.conversations.add_message(
+                    await nm.conversations.ingest(
                         user_id=user_id,
                         role="user",
                         content=message
@@ -418,7 +418,7 @@ class ConversationEngine:
             # 异步同步到 neuromem（不阻塞响应）
             async def _sync_neuromem():
                 try:
-                    await nm.conversations.add_message(
+                    await nm.conversations.ingest(
                         user_id=user_id,
                         role="user",
                         content=message

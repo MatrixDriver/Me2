@@ -173,7 +173,7 @@ async def trigger_user_reflect(
     from app.main import nm
     if nm is None:
         raise HTTPException(status_code=503, detail="neuromem not initialized")
-    await nm.reflect(user_id, background=True)
+    await nm.digest(user_id, background=True)
     return {"status": "triggered", "user_id": user_id}
 
 

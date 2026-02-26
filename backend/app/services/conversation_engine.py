@@ -1,4 +1,4 @@
-"""对话引擎 - 基于 NeuroMemory v0.6 的温暖陪伴式聊天"""
+"""对话引擎 - 基于 neuromem 的温暖陪伴式聊天"""
 import asyncio
 import logging
 import time
@@ -23,7 +23,7 @@ class ConversationEngine:
         """统一的记忆召回逻辑（非流式和流式共用）
 
         使用 nm.recall() 公开 API，内容增强（情景记忆时间前缀、情感标签）
-        和图谱增强由 NeuroMemory 内部完成。
+        和图谱增强由 neuromem 内部完成。
         """
         t0 = time.time()
         result = await nm.recall(user_id=user_id, query=message, limit=20)
@@ -152,8 +152,8 @@ class ConversationEngine:
             await db.commit()
             timings['save_to_db'] = time.time() - step_start
 
-            # === 7. 异步同步到 NeuroMemory（不阻塞响应）===
-            async def _sync_neuromemory():
+            # === 7. 异步同步到 neuromem（不阻塞响应）===
+            async def _sync_neuromem():
                 try:
                     await nm.conversations.add_message(
                         user_id=user_id,
@@ -161,9 +161,9 @@ class ConversationEngine:
                         content=message
                     )
                 except Exception as e:
-                    logger.error(f"NeuroMemory 同步失败: {e}", exc_info=True)
-            asyncio.create_task(_sync_neuromemory())
-            timings['sync_neuromemory'] = 0  # 异步执行，不计入响应时间
+                    logger.error(f"neuromem 同步失败: {e}", exc_info=True)
+            asyncio.create_task(_sync_neuromem())
+            timings['sync_neuromem'] = 0  # 异步执行，不计入响应时间
 
             timings['total'] = time.time() - start_time
             logger.info(f"对话处理完成: 总耗时: {timings['total']:.3f}s")
@@ -195,7 +195,7 @@ class ConversationEngine:
         graph_context: list[str] | None = None,
         user_profile: dict | None = None,
     ) -> str:
-        """按 NeuroMemory 最佳实践组装 system prompt
+        """按 neuromem 最佳实践组装 system prompt
 
         核心原则：
         - recall() 的 merged 已按综合评分排序（RRF + 时间衰减 + 重要度 + 图谱增强）
@@ -415,8 +415,8 @@ class ConversationEngine:
             await db.commit()
             timings['save_to_db'] = time.time() - step_start
 
-            # 异步同步到 NeuroMemory（不阻塞响应）
-            async def _sync_neuromemory():
+            # 异步同步到 neuromem（不阻塞响应）
+            async def _sync_neuromem():
                 try:
                     await nm.conversations.add_message(
                         user_id=user_id,
@@ -424,8 +424,8 @@ class ConversationEngine:
                         content=message
                     )
                 except Exception as e:
-                    logger.error(f"NeuroMemory 同步失败: {e}", exc_info=True)
-            asyncio.create_task(_sync_neuromemory())
+                    logger.error(f"neuromem 同步失败: {e}", exc_info=True)
+            asyncio.create_task(_sync_neuromem())
 
             timings['total'] = time.time() - start_time
 

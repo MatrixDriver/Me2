@@ -9,10 +9,8 @@ sqlalchemy>=2.0.25
 asyncpg>=0.30.0
 alembic==1.13.1
 
-# NeuroMemory
-neuromemory==0.6.6
-boto3>=1.34.0  # neuromemory S3 storage dependency
-email-validator>=2.0.0  # neuromemory pydantic email fields
+# neuromem
+neuromem==0.7.0
 
 # LLM
 openai>=1.50.0  # DeepSeek 使用 OpenAI 兼容接口

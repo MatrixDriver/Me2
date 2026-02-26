@@ -193,7 +193,7 @@ def mock_llm_response():
 
 
 @pytest.fixture
-def mock_neuromemory():
+def mock_neuromem():
     """Mock NeuroMemory 客户端"""
     class MockNeuroMemory:
         async def _add_memory(self, user_id, content, memory_type="general", metadata=None, check_conflict=True):
@@ -287,7 +287,7 @@ def skip_if_no_api_key():
             pytest.skip("DEEPSEEK_API_KEY not set")
         elif api_type == "gemini" and not settings.GEMINI_API_KEY:
             pytest.skip("GEMINI_API_KEY not set")
-        elif api_type == "neuromemory" and not settings.NEUROMEMORY_API_KEY:
+        elif api_type == "neuromem" and not settings.NEUROMEMORY_API_KEY:
             pytest.skip("NEUROMEMORY_API_KEY not set")
 
     return _skip

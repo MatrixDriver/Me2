@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export default function VersionBadge() {
-  const [versions, setVersions] = useState<{ app: string; neuromemory: string } | null>(null);
+  const [versions, setVersions] = useState<{ app: string; neuromem: string } | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/version`)
@@ -19,7 +19,7 @@ export default function VersionBadge() {
   return (
     <div className="text-[11px] text-muted-foreground/50 leading-relaxed">
       <div>Me2 v{versions.app}</div>
-      <div>NeuroMemory v{versions.neuromemory}</div>
+      <div>neuromem v{versions.neuromem}</div>
     </div>
   );
 }

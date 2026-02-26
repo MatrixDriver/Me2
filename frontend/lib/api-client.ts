@@ -34,7 +34,7 @@ export interface ChatMessage {
       build_prompt?: number;
       llm_generate?: number;
       save_to_db?: number;
-      sync_neuromemory?: number;
+      sync_neuromem?: number;
       total?: number;
     };
     background_tasks?: string[];
@@ -105,7 +105,7 @@ export interface StreamChunk {
       build_prompt?: number;
       llm_generate?: number;
       save_to_db?: number;
-      sync_neuromemory?: number;
+      sync_neuromem?: number;
       total?: number;
     };
     background_tasks?: string[];

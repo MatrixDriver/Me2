@@ -15,13 +15,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from neuromemory import (
-    NeuroMemory, OpenAILLM, ExtractionStrategy,
+from neuromem import (
+    neuromem, OpenAILLM, ExtractionStrategy,
     SiliconFlowEmbedding, OpenAIEmbedding,
 )
 
 try:
-    from neuromemory import SentenceTransformerEmbedding
+    from neuromem import SentenceTransformerEmbedding
     USE_LOCAL_EMBEDDING = SentenceTransformerEmbedding is not None
 except ImportError:
     SentenceTransformerEmbedding = None
@@ -30,7 +30,7 @@ except ImportError:
 if not USE_LOCAL_EMBEDDING:
     logger.warning("⚠️  sentence-transformers 未安装，使用远程 Embedding API")
 
-# 全局 NeuroMemory 实例
+# 全局 neuromem 实例
 nm: NeuroMemory = None
 
 
@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
             )""",
             # users 表
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE NOT NULL",
-            # emotion_profiles 表 (neuromemory 0.6.0 新增列)
+            # emotion_profiles 表 (neuromem 0.6.0+ 新增列)
             "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS last_reflected_at TIMESTAMPTZ",
             "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_period VARCHAR(50)",
             "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_valence FLOAT",
@@ -112,8 +112,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"⚠️  恢复指标失败: {e}")
 
-    # 2. 初始化 NeuroMemory
-    logger.info("🧠 初始化 NeuroMemory...")
+    # 2. 初始化 neuromem
+    logger.info("🧠 初始化 neuromem...")
     try:
         # 选择 Embedding Provider
         embedding_provider = None
@@ -215,9 +215,9 @@ async def lifespan(app: FastAPI):
             on_embedding_call=_on_embedding_call,
         )
         await nm.init()
-        logger.info("✅ NeuroMemory 初始化完成")
+        logger.info("✅ neuromem 初始化完成")
     except Exception as e:
-        logger.error(f"❌ NeuroMemory 初始化失败: {e}")
+        logger.error(f"❌ neuromem 初始化失败: {e}")
         raise
 
     logger.info("✅ Me2 启动完成")
@@ -234,9 +234,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"⚠️  保存指标失败: {e}")
 
-    # 关闭 NeuroMemory
+    # 关闭 neuromem
     if nm:
-        logger.info("🧠 关闭 NeuroMemory...")
+        logger.info("🧠 关闭 neuromem...")
         await nm.close()
 
     # 关闭数据库
@@ -319,12 +319,12 @@ async def version():
     """版本信息"""
     from importlib.metadata import version as pkg_version
     try:
-        nm_version = pkg_version("neuromemory")
+        nm_version = pkg_version("neuromem")
     except Exception:
         nm_version = "unknown"
     return {
         "app": settings.APP_VERSION,
-        "neuromemory": nm_version,
+        "neuromem": nm_version,
     }
 
 
@@ -332,7 +332,7 @@ async def version():
 async def health():
     """健康检查"""
     nm_status = "healthy" if nm is not None else "not_initialized"
-    return {"status": "healthy", "neuromemory": nm_status}
+    return {"status": "healthy", "neuromem": nm_status}
 
 
 if __name__ == "__main__":

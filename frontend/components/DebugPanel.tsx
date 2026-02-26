@@ -19,7 +19,7 @@ interface DebugInfo {
     build_prompt?: number;
     llm_generate?: number;
     save_to_db?: number;
-    sync_neuromemory?: number;
+    sync_neuromem?: number;
     total?: number;
     recall_detail?: {
       total?: number;
@@ -47,7 +47,7 @@ export default function DebugPanel({ debugInfo }: DebugPanelProps) {
     { key: 'build_prompt', label: '构建Prompt', color: 'bg-green-500' },
     { key: 'llm_generate', label: 'LLM生成', color: 'bg-orange-500' },
     { key: 'save_to_db', label: '保存数据', color: 'bg-cyan-500' },
-    { key: 'sync_neuromemory', label: '同步记忆', color: 'bg-pink-500' },
+    { key: 'sync_neuromem', label: '同步记忆', color: 'bg-pink-500' },
   ];
 
   // 从各步骤求和计算总耗时，避免依赖后端 total 字段

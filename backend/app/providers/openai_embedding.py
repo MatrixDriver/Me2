@@ -3,7 +3,7 @@ import time
 import logging
 from typing import List
 
-from neuromemory.providers import EmbeddingProvider
+from neuromem.providers import EmbeddingProvider
 from openai import AsyncOpenAI
 from app.services.metrics_collector import MetricsCollector
 

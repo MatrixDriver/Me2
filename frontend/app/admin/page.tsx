@@ -62,7 +62,7 @@ interface EmbeddingStats {
 
 interface HealthData {
   uptime_seconds: number;
-  neuromemory_version: string;
+  neuromem_version: string;
   db_pool: { size: number; checked_in: number; checked_out: number; overflow: number };
 }
 
@@ -171,11 +171,11 @@ export default function AdminDashboard() {
 
             <div className="glass-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground text-sm">NeuroMemory</span>
+                <span className="text-muted-foreground text-sm">neuromem</span>
                 <Cpu className="w-4 h-4 text-muted-foreground/50" />
               </div>
               <div className="text-2xl font-bold text-foreground">
-                v{health.neuromemory_version}
+                v{health.neuromem_version}
               </div>
             </div>
 

@@ -128,7 +128,7 @@ export default function SettingsPage() {
 
       {/* 可编辑配置 */}
       <div className="glass-card rounded-xl p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-foreground">NeuroMemory 运行时配置</h2>
+        <h2 className="text-lg font-semibold text-foreground">neuromem 运行时配置</h2>
 
         {/* reflection_interval */}
         <div className="space-y-1.5">

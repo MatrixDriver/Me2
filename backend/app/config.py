@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-in-production"
     ADMIN_DEFAULT_PASSWORD: str = "change-me-in-production"
 
-    # Database (Me2 用户表 + NeuroMemory 共用)
+    # Database (Me2 用户表 + neuromem 共用)
     # Railway 提供 postgresql://... 格式，需要转为 postgresql+asyncpg://...
     DATABASE_URL: str = "postgresql+asyncpg://me2_user:me2_secure_password_2026@localhost:5434/me2db"
 
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     REMOTE_EMBEDDING_MODEL: str = "openai/text-embedding-3-small"
     REMOTE_EMBEDDING_DIMENSIONS: int = 1536
 
-    # NeuroMemory 配置
+    # neuromem 配置
     NEUROMEMORY_EXTRACTION_INTERVAL: int = 1  # 每条用户消息都异步提取记忆
     NEUROMEMORY_REFLECTION_INTERVAL: int = 20  # 每 20 次提取后反思（即每 20 条消息）
     NEUROMEMORY_IDLE_TIMEOUT: int = 600  # 闲置 10 分钟后自动提取和反思

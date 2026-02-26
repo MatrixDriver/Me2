@@ -1,4 +1,4 @@
-"""记忆管理 API — 与 NeuroMemory 数据模型对齐"""
+"""记忆管理 API — 与 neuromem 数据模型对齐"""
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -139,7 +139,7 @@ async def get_emotion(current_user: User = Depends(get_current_user)):
     """获取情绪档案"""
     try:
         nm = _get_nm()
-        from neuromemory.models.emotion_profile import EmotionProfile
+        from neuromem.models.emotion_profile import EmotionProfile
         from sqlalchemy import select
 
         async with nm._db.session() as session:
@@ -190,7 +190,7 @@ async def get_knowledge_graph(
     """获取真实知识图谱 (graph_nodes + graph_edges)"""
     try:
         nm = _get_nm()
-        from neuromemory.models.graph import GraphNode, GraphEdge
+        from neuromem.models.graph import GraphNode, GraphEdge
         from sqlalchemy import select
 
         async with nm._db.session() as session:
@@ -283,7 +283,7 @@ async def delete_graph_edge(
     """删除图谱边"""
     try:
         nm = _get_nm()
-        from neuromemory.models.graph import GraphEdge
+        from neuromem.models.graph import GraphEdge
         from sqlalchemy import select
         import uuid
 
@@ -318,8 +318,8 @@ async def delete_all_memories(
     """清除所有记忆（可按类型过滤）"""
     try:
         nm = _get_nm()
-        from neuromemory.services.memory import MemoryService
-        from neuromemory.models.graph import GraphEdge
+        from neuromem.services.memory import MemoryService
+        from neuromem.models.graph import GraphEdge
         from sqlalchemy import delete
 
         async with nm._db.session() as session:
@@ -371,7 +371,7 @@ async def get_memory_stats(current_user: User = Depends(get_current_user)):
 
         try:
             from importlib.metadata import version as pkg_version
-            nm_version = pkg_version("neuromemory")
+            nm_version = pkg_version("neuromem")
         except Exception:
             nm_version = "unknown"
 
@@ -388,7 +388,7 @@ async def get_memory_stats(current_user: User = Depends(get_current_user)):
             "recent_7_days_total": recent_count,
             "avg_per_day": round(recent_count / 7, 1) if recent_count > 0 else 0,
             "active_entities": stats.get("active_entities", 0),
-            "neuromemory_version": nm_version,
+            "neuromem_version": nm_version,
         }
     except Exception as e:
         logger.error(f"获取统计信息失败: {e}", exc_info=True)
@@ -467,7 +467,7 @@ async def get_timeline(
     """获取时间线"""
     try:
         nm = _get_nm()
-        from neuromemory.services.memory import MemoryService
+        from neuromem.services.memory import MemoryService
 
         async with nm._db.session() as session:
             svc = MemoryService(session)
@@ -559,7 +559,7 @@ async def get_memories(
     """获取记忆列表（真实分页）"""
     try:
         nm = _get_nm()
-        from neuromemory.services.memory import MemoryService
+        from neuromem.services.memory import MemoryService
 
         async with nm._db.session() as session:
             svc = MemoryService(session)
@@ -597,7 +597,7 @@ async def get_memory(
     """获取单个记忆详情"""
     try:
         nm = _get_nm()
-        from neuromemory.services.memory import MemoryService
+        from neuromem.services.memory import MemoryService
 
         async with nm._db.session() as session:
             svc = MemoryService(session)
@@ -633,7 +633,7 @@ async def update_memory(
     """更新记忆（真实更新）"""
     try:
         nm = _get_nm()
-        from neuromemory.services.memory import MemoryService
+        from neuromem.services.memory import MemoryService
 
         async with nm._db.session() as session:
             svc = MemoryService(session, embedding=nm._embedding)
@@ -663,7 +663,7 @@ async def delete_memory(
     """删除记忆（物理删除）"""
     try:
         nm = _get_nm()
-        from neuromemory.services.memory import MemoryService
+        from neuromem.services.memory import MemoryService
 
         async with nm._db.session() as session:
             svc = MemoryService(session)

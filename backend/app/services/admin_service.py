@@ -80,7 +80,7 @@ class AdminService:
         }
 
     async def _get_memory_stats(self) -> dict[str, Any]:
-        """查询 NeuroMemory embeddings 表获取记忆统计"""
+        """查询 neuromem embeddings 表获取记忆统计"""
         stats: dict[str, Any] = {
             "total": 0,
             "by_type": {},
@@ -88,7 +88,7 @@ class AdminService:
             "graph_edges": 0,
         }
 
-        # 查询 embeddings 表 (NeuroMemory 管理的表)
+        # 查询 embeddings 表 (neuromem 管理的表)
         try:
             result = await self.db.execute(
                 text("SELECT memory_type, COUNT(*) as cnt FROM embeddings GROUP BY memory_type")
@@ -293,7 +293,7 @@ class AdminService:
     async def delete_user(self, user_id: str, current_admin_id: str) -> dict[str, Any]:
         """
         删除用户及其所有数据。不能删除自己。
-        先用 nm.delete_user_data() 清理 NeuroMemory 数据，
+        先用 nm.delete_user_data() 清理 neuromem 数据，
         再 CASCADE 删除用户（自动清 sessions/messages）。
         """
         if user_id == current_admin_id:
@@ -308,7 +308,7 @@ class AdminService:
 
         username = user.username
 
-        # 用 NeuroMemory 公开 API 清理其管理的所有表
+        # 用 neuromem 公开 API 清理其管理的所有表
         from app.main import nm
         try:
             await nm.delete_user_data(user_id)
@@ -324,7 +324,7 @@ class AdminService:
     async def clear_user_data(self, user_id: str) -> dict[str, Any]:
         """
         清空用户数据（保留用户账号）。
-        用 nm.delete_user_data() 清理 NeuroMemory 管理的数据，
+        用 nm.delete_user_data() 清理 neuromem 管理的数据，
         再手动清 Me2 自己的 sessions/messages。
         """
         user_result = await self.db.execute(
@@ -346,7 +346,7 @@ class AdminService:
 
         await self.db.commit()
 
-        # 用 NeuroMemory 公开 API 清理其管理的所有表
+        # 用 neuromem 公开 API 清理其管理的所有表
         from app.main import nm
         try:
             nm_result = await nm.delete_user_data(user_id)

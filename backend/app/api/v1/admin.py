@@ -131,8 +131,8 @@ async def get_nm_config(
 ):
     from app.main import nm
     if nm is None:
-        raise HTTPException(status_code=503, detail="NeuroMemory not initialized")
-    extraction = nm.extraction
+        raise HTTPException(status_code=503, detail="neuromem not initialized")
+    extraction = nm._extraction
     return {
         "reflection_interval": nm.reflection_interval,
         "auto_extract": nm.auto_extract,
@@ -151,7 +151,7 @@ async def update_nm_config(
 ):
     from app.main import nm
     if nm is None:
-        raise HTTPException(status_code=503, detail="NeuroMemory not initialized")
+        raise HTTPException(status_code=503, detail="neuromem not initialized")
     updated = {}
     if body.reflection_interval is not None:
         nm.reflection_interval = body.reflection_interval
@@ -172,7 +172,7 @@ async def trigger_user_reflect(
 ):
     from app.main import nm
     if nm is None:
-        raise HTTPException(status_code=503, detail="NeuroMemory not initialized")
+        raise HTTPException(status_code=503, detail="neuromem not initialized")
     await nm.reflect(user_id, background=True)
     return {"status": "triggered", "user_id": user_id}
 
@@ -185,7 +185,7 @@ async def get_system_health(
     db: AsyncSession = Depends(get_db),
 ):
     collector = MetricsCollector()
-    import neuromemory
+    import neuromem
 
     # DB pool info
     pool = db.get_bind().pool
@@ -198,7 +198,7 @@ async def get_system_health(
 
     return {
         "uptime_seconds": round(collector.get_uptime()),
-        "neuromemory_version": neuromemory.__version__,
+        "neuromem_version": neuromem.__version__,
         "db_pool": pool_info,
     }
 

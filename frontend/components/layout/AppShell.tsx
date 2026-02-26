@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from './Sidebar';
@@ -7,10 +8,24 @@ import MobileNav from './MobileNav';
 import InstallPrompt from '@/components/InstallPrompt';
 
 const AUTH_PAGES = ['/login', '/register'];
+const STORAGE_KEY = 'me2-sidebar-collapsed';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated, loading } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'true') setCollapsed(true);
+  }, []);
+
+  const handleToggle = () => {
+    setCollapsed((prev) => {
+      localStorage.setItem(STORAGE_KEY, String(!prev));
+      return !prev;
+    });
+  };
 
   // Auth pages: no sidebar
   if (AUTH_PAGES.includes(pathname)) {
@@ -27,7 +42,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="flex h-[100dvh] overflow-hidden">
-        <Sidebar />
+        <Sidebar collapsed={collapsed} onToggle={handleToggle} />
         <main className="flex-1 overflow-hidden flex flex-col pb-14 md:pb-0">
           {children}
         </main>
@@ -44,7 +59,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Authenticated: show full layout
   return (
     <div className="flex h-[100dvh] overflow-hidden">
-      <Sidebar />
+      <Sidebar collapsed={collapsed} onToggle={handleToggle} />
       <main className="flex-1 overflow-hidden flex flex-col pb-14 md:pb-0">
         {children}
       </main>

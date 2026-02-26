@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import UserMenu from './UserMenu';
-import VersionBadge from '@/components/VersionBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
 import { apiClient, SessionInfo } from '@/lib/api-client';
@@ -360,13 +359,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <SidebarItem href="/settings" icon={Settings} label="设置" collapsed={collapsed} />
           {isAdmin && <SidebarItem href="/admin" icon={Shield} label="管理" collapsed={collapsed} />}
         </nav>
-        <div className="px-3 py-2 border-t border-border/50 space-y-2">
+        <div className="px-3 py-2 border-t border-border/50">
           <UserMenu collapsed={collapsed} />
-          {!collapsed && (
-            <div className="px-1">
-              <VersionBadge />
-            </div>
-          )}
         </div>
       </div>
     </aside>

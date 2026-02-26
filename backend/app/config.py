@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     # App
     APP_NAME: str = "Me2"
-    APP_VERSION: str = "0.2.0"
+    APP_VERSION: str = "0.3.0"
     DEBUG: bool = True
     SECRET_KEY: str = "change-me-in-production"
     ADMIN_DEFAULT_PASSWORD: str = "change-me-in-production"

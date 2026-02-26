@@ -3,11 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Database,
-  Settings,
-  Shield,
-  PanelLeftClose,
-  PanelLeftOpen,
   Plus,
   Search,
   Pin,
@@ -18,18 +13,14 @@ import {
   MoreHorizontal,
   MessageCircle,
   X,
+  Database,
+  Settings,
+  Shield,
 } from 'lucide-react';
-import SidebarItem from './SidebarItem';
-import UserMenu from './UserMenu';
-import VersionBadge from '@/components/VersionBadge';
-import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { apiClient, SessionInfo } from '@/lib/api-client';
-
-interface SidebarProps {
-  collapsed: boolean;
-  onToggle: () => void;
-}
+import UserMenu from './UserMenu';
 
 function getTimeGroup(dateStr: string): string {
   const date = new Date(dateStr);
@@ -44,9 +35,9 @@ function getTimeGroup(dateStr: string): string {
   return '更早';
 }
 
-export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export default function MobileSidebar() {
   const { isAdmin } = useAuth();
-  const { currentSessionId, refreshTrigger, selectSession, startNewChat } = useSession();
+  const { currentSessionId, refreshTrigger, mobileSidebarOpen, selectSession, startNewChat, closeMobileSidebar } = useSession();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -69,18 +60,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   }, []);
 
   useEffect(() => {
-    loadSessions();
-  }, [loadSessions, refreshTrigger]);
+    if (mobileSidebarOpen) {
+      loadSessions();
+    }
+  }, [mobileSidebarOpen, loadSessions, refreshTrigger]);
 
-  // Search
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-
     if (!searchQuery.trim()) {
       loadSessions();
       return;
     }
-
     searchTimerRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
@@ -92,13 +82,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         setIsSearching(false);
       }
     }, 300);
-
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
   }, [searchQuery, loadSessions]);
 
-  // Close menu on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -111,16 +99,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const handleSelectSession = (sessionId: string) => {
     selectSession(sessionId);
-    if (pathname !== '/') {
-      router.push('/');
-    }
+    if (pathname !== '/') router.push('/');
   };
 
   const handleNewChat = () => {
     startNewChat();
-    if (pathname !== '/') {
-      router.push('/');
-    }
+    if (pathname !== '/') router.push('/');
   };
 
   const handlePin = async (session: SessionInfo) => {
@@ -134,10 +118,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   };
 
   const handleRename = async (sessionId: string) => {
-    if (!renameValue.trim()) {
-      setRenamingId(null);
-      return;
-    }
+    if (!renameValue.trim()) { setRenamingId(null); return; }
     try {
       await apiClient.updateSession(sessionId, { title: renameValue.trim() });
       await loadSessions();
@@ -151,9 +132,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     try {
       await apiClient.deleteSession(sessionId);
       await loadSessions();
-      if (currentSessionId === sessionId) {
-        startNewChat();
-      }
+      if (currentSessionId === sessionId) startNewChat();
     } catch (err) {
       console.error('删除失败:', err);
     }
@@ -176,9 +155,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     setMenuSessionId(null);
   };
 
+  const handleNavClick = (href: string) => {
+    closeMobileSidebar();
+    router.push(href);
+  };
+
   const getSessionTitle = (session: SessionInfo) => session.title || '新对话';
 
-  // Group sessions
   const pinnedSessions = sessions.filter((s) => s.pinned);
   const unpinnedSessions = sessions.filter((s) => !s.pinned);
   const grouped: Record<string, SessionInfo[]> = {};
@@ -190,14 +173,23 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const groupOrder = ['今天', '昨天', '本周', '更早'];
 
   return (
-    <aside
-      className={`hidden md:flex md:flex-col glass border-r border-white/5 h-screen sticky top-0 transition-all duration-200 ${
-        collapsed ? 'md:w-16' : 'md:w-64'
-      }`}
-    >
-      {/* Header: Logo + New Chat + Collapse */}
-      <div className="px-3 py-3 border-b border-border flex items-center gap-2">
-        {!collapsed && (
+    <>
+      {/* Backdrop */}
+      {mobileSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={closeMobileSidebar}
+        />
+      )}
+
+      {/* Drawer */}
+      <div
+        className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 flex flex-col glass transition-transform duration-300 ${
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-2 px-3 py-3 border-b border-border/30">
           <button
             onClick={handleNewChat}
             className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 text-primary hover:from-primary/30 hover:to-primary/20 transition-all text-sm font-medium"
@@ -205,42 +197,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <Plus className="w-4 h-4" />
             新对话
           </button>
-        )}
-        {collapsed && (
           <button
-            onClick={handleNewChat}
-            className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors mx-auto"
-            title="新对话"
+            onClick={closeMobileSidebar}
+            className="p-2 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Plus className="w-5 h-5" />
-          </button>
-        )}
-        {!collapsed && (
-          <button
-            onClick={onToggle}
-            className="p-1.5 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors flex-shrink-0"
-            aria-label="收起侧边栏"
-          >
-            <PanelLeftClose className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-
-      {/* Collapsed: expand button */}
-      {collapsed && (
-        <div className="px-3 py-2">
-          <button
-            onClick={onToggle}
-            className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors mx-auto block"
-            aria-label="展开侧边栏"
-          >
-            <PanelLeftOpen className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
-      )}
 
-      {/* Search (hidden when collapsed) */}
-      {!collapsed && (
+        {/* Search */}
         <div className="px-3 py-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
@@ -261,16 +226,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             )}
           </div>
         </div>
-      )}
 
-      {/* Conversation List (hidden when collapsed) */}
-      {!collapsed && (
+        {/* Conversation List */}
         <div className="flex-1 overflow-y-auto px-2 pb-2">
           {isSearching && (
             <div className="text-center text-muted-foreground/50 text-xs py-4">搜索中...</div>
           )}
 
-          {/* Pinned */}
           {pinnedSessions.length > 0 && (
             <div className="mb-2">
               <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-muted-foreground/60 font-medium">
@@ -278,7 +240,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 置顶
               </div>
               {pinnedSessions.map((session) => (
-                <SessionItem
+                <MobileSessionItem
                   key={session.id}
                   session={session}
                   isActive={session.id === currentSessionId}
@@ -288,11 +250,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   onSelect={() => handleSelectSession(session.id)}
                   onMenuToggle={() => setMenuSessionId(menuSessionId === session.id ? null : session.id)}
                   onPin={() => handlePin(session)}
-                  onStartRename={() => {
-                    setRenamingId(session.id);
-                    setRenameValue(getSessionTitle(session));
-                    setMenuSessionId(null);
-                  }}
+                  onStartRename={() => { setRenamingId(session.id); setRenameValue(getSessionTitle(session)); setMenuSessionId(null); }}
                   onRename={() => handleRename(session.id)}
                   onRenameChange={setRenameValue}
                   onDelete={() => handleDelete(session.id)}
@@ -304,17 +262,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </div>
           )}
 
-          {/* Time Groups */}
           {groupOrder.map((group) => {
             const items = grouped[group];
             if (!items || items.length === 0) return null;
             return (
               <div key={group} className="mb-2">
-                <div className="px-2 py-1.5 text-xs text-muted-foreground/60 font-medium">
-                  {group}
-                </div>
+                <div className="px-2 py-1.5 text-xs text-muted-foreground/60 font-medium">{group}</div>
                 {items.map((session) => (
-                  <SessionItem
+                  <MobileSessionItem
                     key={session.id}
                     session={session}
                     isActive={session.id === currentSessionId}
@@ -324,11 +279,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     onSelect={() => handleSelectSession(session.id)}
                     onMenuToggle={() => setMenuSessionId(menuSessionId === session.id ? null : session.id)}
                     onPin={() => handlePin(session)}
-                    onStartRename={() => {
-                      setRenamingId(session.id);
-                      setRenameValue(getSessionTitle(session));
-                      setMenuSessionId(null);
-                    }}
+                    onStartRename={() => { setRenamingId(session.id); setRenameValue(getSessionTitle(session)); setMenuSessionId(null); }}
                     onRename={() => handleRename(session.id)}
                     onRenameChange={setRenameValue}
                     onDelete={() => handleDelete(session.id)}
@@ -348,34 +299,50 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </div>
           )}
         </div>
-      )}
 
-      {/* Collapsed: spacer to push nav to bottom */}
-      {collapsed && <div className="flex-1" />}
-
-      {/* Bottom: Nav + User */}
-      <div className="border-t border-border">
-        <nav className="px-3 py-2 space-y-1">
-          <SidebarItem href="/memories" icon={Database} label="记忆" collapsed={collapsed} />
-          <SidebarItem href="/settings" icon={Settings} label="设置" collapsed={collapsed} />
-          {isAdmin && <SidebarItem href="/admin" icon={Shield} label="管理" collapsed={collapsed} />}
-        </nav>
-        <div className="px-3 py-2 border-t border-border/50 space-y-2">
-          <UserMenu collapsed={collapsed} />
-          {!collapsed && (
-            <div className="px-1">
-              <VersionBadge />
-            </div>
+        {/* Bottom Nav */}
+        <div className="border-t border-border px-3 py-2 space-y-1">
+          <button
+            onClick={() => handleNavClick('/memories')}
+            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              pathname === '/memories' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`}
+          >
+            <Database className="w-5 h-5" />
+            记忆
+          </button>
+          <button
+            onClick={() => handleNavClick('/settings')}
+            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              pathname === '/settings' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            设置
+          </button>
+          {isAdmin && (
+            <button
+              onClick={() => handleNavClick('/admin')}
+              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                pathname.startsWith('/admin') ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              }`}
+            >
+              <Shield className="w-5 h-5" />
+              管理
+            </button>
           )}
         </div>
+
+        <div className="px-3 py-2 border-t border-border/50">
+          <UserMenu />
+        </div>
       </div>
-    </aside>
+    </>
   );
 }
 
-/* ---- Session Item (inline) ---- */
-
-interface SessionItemProps {
+/* Session item for mobile - same as desktop */
+interface MobileSessionItemProps {
   session: SessionInfo;
   isActive: boolean;
   menuOpen: boolean;
@@ -393,7 +360,7 @@ interface SessionItemProps {
   getTitle: (session: SessionInfo) => string;
 }
 
-function SessionItem({
+function MobileSessionItem({
   session,
   isActive,
   menuOpen,
@@ -409,15 +376,13 @@ function SessionItem({
   onExport,
   menuRef,
   getTitle,
-}: SessionItemProps) {
+}: MobileSessionItemProps) {
   return (
     <div className="relative group">
       <button
         onClick={onSelect}
         className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all ${
-          isActive
-            ? 'bg-primary/15 text-primary'
-            : 'text-foreground/80 hover:bg-secondary/40'
+          isActive ? 'bg-primary/15 text-primary' : 'text-foreground/80 hover:bg-secondary/40'
         }`}
       >
         <MessageCircle className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
@@ -427,10 +392,7 @@ function SessionItem({
               autoFocus
               value={renameValue}
               onChange={(e) => onRenameChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') onRename();
-                if (e.key === 'Escape') onRenameChange('');
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') onRename(); if (e.key === 'Escape') onRenameChange(''); }}
               onBlur={onRename}
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-secondary/50 border border-border/50 rounded px-1.5 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40"
@@ -439,14 +401,10 @@ function SessionItem({
             <span className="truncate block">{getTitle(session)}</span>
           )}
         </div>
-
         {!isRenaming && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onMenuToggle();
-            }}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-secondary/50 transition-all"
+            onClick={(e) => { e.stopPropagation(); onMenuToggle(); }}
+            className="p-1 rounded hover:bg-secondary/50 transition-all"
           >
             <MoreHorizontal className="w-3.5 h-3.5" />
           </button>
@@ -454,38 +412,20 @@ function SessionItem({
       </button>
 
       {menuOpen && (
-        <div
-          ref={menuRef}
-          className="absolute right-0 top-full mt-1 z-50 w-40 glass-strong rounded-lg shadow-xl py-1"
-        >
-          <button
-            onClick={onStartRename}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            重命名
+        <div ref={menuRef} className="absolute right-0 top-full mt-1 z-50 w-40 glass-strong rounded-lg shadow-xl py-1">
+          <button onClick={onStartRename} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors">
+            <Pencil className="w-3.5 h-3.5" /> 重命名
           </button>
-          <button
-            onClick={onPin}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors"
-          >
+          <button onClick={onPin} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors">
             {session.pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
             {session.pinned ? '取消置顶' : '置顶'}
           </button>
-          <button
-            onClick={onExport}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            导出
+          <button onClick={onExport} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors">
+            <Download className="w-3.5 h-3.5" /> 导出
           </button>
           <div className="border-t border-border/30 my-1" />
-          <button
-            onClick={onDelete}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            删除
+          <button onClick={onDelete} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+            <Trash2 className="w-3.5 h-3.5" /> 删除
           </button>
         </div>
       )}

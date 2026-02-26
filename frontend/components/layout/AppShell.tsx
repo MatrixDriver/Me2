@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { SessionProvider } from '@/contexts/SessionContext';
 import Sidebar from './Sidebar';
+import MobileSidebar from './MobileSidebar';
 import MobileNav from './MobileNav';
 import InstallPrompt from '@/components/InstallPrompt';
 
@@ -38,33 +40,37 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   // Loading state: show with sidebar layout to prevent flash
-  // ProtectedRoute will handle the actual redirect if not authenticated
   if (loading) {
     return (
-      <div className="flex h-[100dvh] overflow-hidden">
-        <Sidebar collapsed={collapsed} onToggle={handleToggle} />
-        <main className="flex-1 overflow-hidden flex flex-col pb-14 md:pb-0">
-          {children}
-        </main>
-        <MobileNav />
-      </div>
+      <SessionProvider>
+        <div className="flex h-[100dvh] overflow-hidden">
+          <Sidebar collapsed={collapsed} onToggle={handleToggle} />
+          <main className="flex-1 overflow-hidden flex flex-col pb-14 md:pb-0">
+            {children}
+          </main>
+          <MobileNav />
+        </div>
+      </SessionProvider>
     );
   }
 
-  // Not authenticated: render without sidebar (will redirect via ProtectedRoute)
+  // Not authenticated: render without sidebar
   if (!isAuthenticated) {
     return <>{children}</>;
   }
 
   // Authenticated: show full layout
   return (
-    <div className="flex h-[100dvh] overflow-hidden">
-      <Sidebar collapsed={collapsed} onToggle={handleToggle} />
-      <main className="flex-1 overflow-hidden flex flex-col pb-14 md:pb-0">
-        {children}
-      </main>
-      <MobileNav />
-      <InstallPrompt />
-    </div>
+    <SessionProvider>
+      <div className="flex h-[100dvh] overflow-hidden">
+        <Sidebar collapsed={collapsed} onToggle={handleToggle} />
+        <main className="flex-1 overflow-hidden flex flex-col pb-14 md:pb-0">
+          {children}
+        </main>
+        <MobileSidebar />
+        <MobileNav />
+        <InstallPrompt />
+      </div>
+    </SessionProvider>
   );
 }

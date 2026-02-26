@@ -4,25 +4,22 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Loader2, Sparkles, Bug, Brain, ChevronDown, ChevronUp, Menu, Plus } from 'lucide-react';
 import { apiClient, ChatMessage, StreamChunk, RecalledMemory } from '@/lib/api-client';
 import { getMemoryTypeName } from '@/lib/utils';
+import { useSession } from '@/contexts/SessionContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DebugPanel from './DebugPanel';
 
 interface ChatInterfaceProps {
   userId: string;
-  sessionId?: string;
-  onSessionChange?: (id: string, isNew: boolean) => void;
-  onOpenSidebar?: () => void;
-  onNewChat?: () => void;
 }
 
-export default function ChatInterface({
-  userId,
-  sessionId: externalSessionId,
-  onSessionChange,
-  onOpenSidebar,
-  onNewChat,
-}: ChatInterfaceProps) {
+export default function ChatInterface({ userId }: ChatInterfaceProps) {
+  const {
+    currentSessionId: externalSessionId,
+    onSessionChange,
+    openMobileSidebar,
+    startNewChat,
+  } = useSession();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -64,11 +61,11 @@ export default function ChatInterface({
       // 会话不存在（404）时，清除无效 session 并重置为新聊天
       setMessages([]);
       setInternalSessionId(undefined);
-      if (onNewChat) onNewChat();
+      startNewChat();
     } finally {
       setLoadingHistory(false);
     }
-  }, [onNewChat]);
+  }, [startNewChat]);
 
   useEffect(() => {
     if (externalSessionId) {
@@ -132,7 +129,7 @@ export default function ChatInterface({
           if (chunk.session_id) {
             setInternalSessionId(chunk.session_id);
             skipNextLoadRef.current = true;
-            onSessionChange?.(chunk.session_id, !!chunk.is_new_session);
+            onSessionChange(chunk.session_id, !!chunk.is_new_session);
           }
           memoriesRecalled = chunk.memories_recalled || 0;
           recalledSummaries = chunk.recalled_summaries || [];
@@ -185,14 +182,12 @@ export default function ChatInterface({
       <div className="sticky top-0 z-10 flex items-center justify-between px-3 md:px-6 py-2.5 md:py-3.5 border-b border-white/5 glass">
         <div className="flex items-center gap-2 md:gap-3">
           {/* Mobile: sidebar toggle */}
-          {onOpenSidebar && (
-            <button
-              onClick={onOpenSidebar}
-              className="md:hidden p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          )}
+          <button
+            onClick={openMobileSidebar}
+            className="md:hidden p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <h1 className="text-base font-semibold text-foreground/90">对话</h1>
           {sessionId && (
             <span className="hidden sm:inline text-xs text-muted-foreground/70 font-mono bg-secondary/30 px-2 py-0.5 rounded">
@@ -202,14 +197,12 @@ export default function ChatInterface({
         </div>
         <div className="flex items-center gap-1.5 md:gap-2">
           {/* Mobile: new chat */}
-          {onNewChat && (
-            <button
-              onClick={onNewChat}
-              className="md:hidden p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          )}
+          <button
+            onClick={startNewChat}
+            className="md:hidden p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
           <button
             onClick={() => setDebugMode(!debugMode)}
             className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all ${

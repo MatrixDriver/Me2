@@ -1,9 +1,9 @@
 ---
 description: "功能实施计划: 用户认证系统和聊天引擎"
-status: completed
+status: archived
 created_at: 2026-02-12T10:30:00
-updated_at: 2026-02-12T17:15:00
-archived_at: null
+updated_at: 2026-03-02T00:05:00
+archived_at: 2026-03-02T00:05:00
 related_files:
   - PRD.md
   - ARCHITECTURE_V2.md

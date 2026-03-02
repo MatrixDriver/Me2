@@ -10,7 +10,7 @@ asyncpg>=0.30.0
 alembic==1.13.1
 
 # neuromem
-neuromem==0.8.0
+neuromem==0.9.4
 boto3>=1.34.0  # neuromem S3Storage 依赖
 
 # LLM

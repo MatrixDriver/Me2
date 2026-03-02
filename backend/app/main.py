@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 from neuromem import (
-    neuromem, OpenAILLM, ExtractionStrategy,
+    NeuroMemory, OpenAILLM, ExtractionStrategy,
     SiliconFlowEmbedding, OpenAIEmbedding,
 )
 

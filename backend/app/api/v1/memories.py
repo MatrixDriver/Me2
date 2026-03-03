@@ -132,54 +132,6 @@ async def delete_preference(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# -- Emotion --
-
-@router.get("/emotion")
-async def get_emotion(current_user: User = Depends(get_current_user)):
-    """获取情绪档案"""
-    try:
-        nm = _get_nm()
-        from neuromem.models.emotion_profile import EmotionProfile
-        from sqlalchemy import select
-
-        async with nm._db.session() as session:
-            result = await session.execute(
-                select(EmotionProfile).where(
-                    EmotionProfile.user_id == current_user.id
-                )
-            )
-            profile = result.scalar_one_or_none()
-
-            if not profile:
-                return {"emotion": None}
-
-            return {
-                "emotion": {
-                    "meso": {
-                        "state": profile.latest_state,
-                        "period": profile.latest_state_period,
-                        "valence": profile.latest_state_valence,
-                        "arousal": profile.latest_state_arousal,
-                        "updated_at": (
-                            profile.latest_state_updated_at.isoformat()
-                            if profile.latest_state_updated_at
-                            else None
-                        ),
-                    },
-                    "macro": {
-                        "valence_avg": profile.valence_avg,
-                        "arousal_avg": profile.arousal_avg,
-                        "dominant_emotions": profile.dominant_emotions,
-                        "emotion_triggers": profile.emotion_triggers,
-                    },
-                    "source_count": profile.source_count,
-                }
-            }
-    except Exception as e:
-        logger.error(f"获取情绪档案失败: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 # -- Graph --
 
 @router.get("/graph")

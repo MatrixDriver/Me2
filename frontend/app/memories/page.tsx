@@ -14,8 +14,6 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import MemoryStore from '@/components/memories/MemoryStore';
 import ProfileSection from '@/components/memories/ProfileSection';
 import KnowledgeGraph from '@/components/memories/KnowledgeGraph';
-import EmotionSection from '@/components/memories/EmotionSection';
-
 type TabKey = 'cognitive' | 'reflect' | 'profile' | 'graph';
 
 const TABS: { key: TabKey; label: string; icon: typeof Brain }[] = [
@@ -125,12 +123,7 @@ export default function MemoriesPage() {
             <MemoryStore allowedTypes={['fact', 'episodic']} />
           )}
           {activeTab === 'reflect' && activatedTabs.has('reflect') && (
-            <div>
-              <MemoryStore allowedTypes={['insight']} />
-              <div className="border-t border-white/5">
-                <EmotionSection />
-              </div>
-            </div>
+            <MemoryStore allowedTypes={['insight']} />
           )}
           {activeTab === 'profile' && activatedTabs.has('profile') && (
             <ProfileSection />

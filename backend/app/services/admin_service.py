@@ -373,7 +373,6 @@ class AdminService:
             "graph_edges",
             "graph_nodes",
             "key_values",
-            "emotion_profiles",
             "users",
         ]
 

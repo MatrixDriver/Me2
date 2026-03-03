@@ -59,17 +59,6 @@ async def lifespan(app: FastAPI):
             )""",
             # users 表
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE NOT NULL",
-            # emotion_profiles 表 (neuromem 0.6.0+ 新增列)
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS last_reflected_at TIMESTAMPTZ",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_period VARCHAR(50)",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_valence FLOAT",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_arousal FLOAT",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS latest_state_updated_at TIMESTAMPTZ",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS valence_avg FLOAT",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS arousal_avg FLOAT",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS emotion_triggers JSONB",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS source_memory_ids UUID[]",
-            "ALTER TABLE emotion_profiles ADD COLUMN IF NOT EXISTS source_count INTEGER",
         ]
         async with engine.begin() as conn:
             for sql in migrations:

@@ -1,10 +1,10 @@
 ---
 title: "对齐 V2 记忆分类体系：Profile + insight 残留清理"
-type: refactor
+type: todo
 status: open
 priority: high
 created_at: 2026-03-04T12:00:00
-updated_at: 2026-03-04T12:00:00
+updated_at: 2026-05-09T16:30:00
 related:
   - D:/CODE/NeuroMem/docs/design/memory-classification-v2.md
   - D:/CODE/neuromem-cloud/rpiv/todo/feature-sidebar-cognitive-hierarchy-restructure.md

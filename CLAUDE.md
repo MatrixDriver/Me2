@@ -9,11 +9,12 @@ Me2 是一个温暖陪伴式 AI 聊天 Web 应用（v0.3.0），核心特色是�
 ## 技术栈
 
 - **后端**: FastAPI 0.109 + SQLAlchemy 2 (async) + asyncpg
-- **前端**: Next.js 14 (App Router) + React 18 + TypeScript 5 + TailwindCSS 3
-- **数据库**: PostgreSQL 18 (含 AGE 图扩展 + pgvector)，端口 5434
-- **记忆引擎**: `neuromem==0.8.0`（PyPI 包名，核心依赖）
-- **LLM**: OpenAI 兼容接口，默认通过 OpenRouter 调用 deepseek/deepseek-v3.2
-- **Embedding**: 默认 remote 模式（OpenAI/SiliconFlow API）
+- **前端**: Next.js 14 (App Router) + React 18 + TypeScript 5 + TailwindCSS 3 + Radix UI
+- **可视化**: Cytoscape.js（知识图谱）+ ECharts（统计图表）+ SWR（数据获取）
+- **数据库**: PostgreSQL 18 (含 AGE 图扩展 + pgvector)，本地端口 5434
+- **记忆引擎**: `neuromem==0.9.4`（PyPI 包名，核心依赖；rpiv/todo 中有 0.12.1 升级计划，含 `insight → trait` 重命名等破坏性变更）
+- **LLM**: 默认走 OpenRouter（`https://openrouter.ai/api/v1`），模型 `deepseek/deepseek-v3.2`
+- **Embedding**: 默认 remote 模式（`openai/text-embedding-3-small`，1536 维），可选本地 `BAAI/bge-small-zh-v1.5`（需手动装 sentence-transformers）
 
 ## 常用命令
 
@@ -97,7 +98,9 @@ SSE 数据格式：`{"type": "token"|"done"|"error", ...}`
 
 Me2 管理的表：`users`、`sessions`、`messages`、`metrics_snapshots`。neuromem 自动管理 `memories`、`conversations`、`graph_nodes`、`graph_edges`、`emotion_profiles`、`kv_store` 等表。
 
-新增列通过 `main.py` lifespan 中的内联 SQL 迁移（`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`），未使用 Alembic。
+新增列/表通过 `main.py` lifespan 中的内联 SQL 迁移（`ALTER TABLE ... ADD COLUMN IF NOT EXISTS` / `CREATE TABLE IF NOT EXISTS`），未使用 Alembic。lifespan 启动时还会确保默认 admin 账号存在（密码取自 `ADMIN_DEFAULT_PASSWORD`）。
+
+`config.py` 的 `fix_database_url` validator 同时处理 `postgresql://` 和 `postgres://` 前缀，转为 `postgresql+asyncpg://`。
 
 ## 开发约定
 
@@ -121,6 +124,7 @@ Me2 管理的表：`users`、`sessions`、`messages`、`metrics_snapshots`。neu
 - `/api/v1/auth/` — 注册、登录（JWT）
 - `/api/v1/chat/` — 流式/非流式聊天、会话 CRUD、消息历史
 - `/api/v1/memories/` — 记忆列表、语义搜索、图谱、情绪档案、用户画像、统计
+- `/api/v1/users/` — 用户自身的操作（设置等）
 - `/api/v1/admin/` — 仪表盘、用户管理（需 `is_admin`）
 - `/health` — 健康检查
 - `/api/v1/version` — 版本信息
@@ -144,4 +148,15 @@ Railway 部署（`railway.json`）：
 
 ## rpiv/ 目录
 
-`rpiv/plans/` 存放功能实施计划，带 YAML frontmatter（`status`、`created_at`、`updated_at`）。修改后必须同步更新 `status` 和 `updated_at`。
+`rpiv/` 走 rpiv-loop 工作流：
+- `plans/` 功能实施计划
+- `todo/` 待办（含已记录但未排期的工作项，例：`v2-profile-alignment.md`、`todo-sdk-upgrade-0.12.1.md`）
+- `archive/` 已归档的历史 RPIV 产物
+
+所有 `.md` 带 YAML frontmatter（`status` / `created_at` / `updated_at`）。修改内容必须同步更新 `status` 和 `updated_at`。status 枚举见 `~/.claude/rules/rpiv-frontmatter.md`（todo 用 `open`/`in-progress`/`completed`/`archived`；plans/requirements/validation 用 `pending`/`in-progress`/`completed`/`superseded`/`archived`）。
+
+## 项目根目录额外内容
+
+- `cli_chat.py` — 终端聊天客户端（不通过 Web UI，直接调后端 API；用法见 `CLI_GUIDE.md`）
+- `scripts/` — 部署/测试辅助脚本（`pre-deploy-check.sh`、`start-dev.sh`、`test-*.py`）
+- 根目录大量 `*_SUMMARY.md` / `*_FIX*.md` 是历史阶段总结，排查老 bug 时可作为背景资料

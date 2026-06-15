@@ -3,8 +3,10 @@ title: "对齐 V2 记忆分类体系:Profile + insight 残留清理"
 type: todo
 status: open
 priority: high
+on_hold: true
+on_hold_since: "2026-06-15"
 created_at: 2026-03-04T12:00:00
-updated_at: 2026-05-22T15:00:00
+updated_at: 2026-06-15T12:00:00+08:00
 related:
   - D:/CODE/NeuroMem/docs/design/memory-classification-v2.md
   - D:/CODE/me2/rpiv/todo/todo-sdk-upgrade-0.12.1.md
@@ -12,6 +14,8 @@ related:
 ---
 
 # 对齐 V2 记忆分类体系:Profile + insight 残留清理
+
+> ⏸️ **2026-06-15 用户主动暂缓 (on hold)**: 用户集中力量先推进 NeuroMem SDK + neuromem-cloud 两个子项目, Me2 短期不推进、不主动提醒。**重启条件**: 用户主动重提 Me2。本 todo 内容与依赖关系不变 (仍 blocked by `todo-sdk-upgrade-0.12.1.md`)。
 
 ## 🚨 Blocked By
 
@@ -43,6 +47,8 @@ related:
 
 与 `todo-cleanup-insight-remnants.md` 高度重叠 — M3-M6 几乎完全等同于该 todo 的工作。
 建议 SDK 升级后**合并执行**, 避免重复 Grep / 重复测试。
+
+> **(2026-06-14) `todo-cleanup-insight-remnants.md` 已归档合并入本 todo**(它是本 todo 真子集)。其后端/前端 insight 残留清单(后端 `conversation_engine.py:225-261`/`models.py:58`/`chat.py`, 前端 24 处/12 文件)与本 todo M3-M7 一致, SDK 升级后由本 todo 一次性执行。
 
 ## 变更清单 (保留原详细方案)
 
@@ -90,8 +96,8 @@ related:
 - **文件**:`backend/app/db/models.py:58` — `insights_used = Column(JSON, nullable=True)`
 - **文件**:`backend/app/api/v1/chat.py:33,74` — `insights_used: int`
 - **文件**:`backend/app/services/conversation_engine.py:174,466` — `"insights_used": 0`
-- **现状**:字段恒为 0, 从未填充
-- **操作**:删除所有引用, 数据库字段标记废弃
+- **现状 (2026-06-14 复核)**:`insights_used` (backend) 写入端恒为 0；但 `backend/app/api/v1/chat.py:301/357/553` 已从 `msg.meta.get("insights_count")` 实际**读取**填充 — 故并非纯死代码, 重命名/废弃时需一并处理这些读取点
+- **操作**:删除/重命名所有引用 (含上述读取点), 数据库字段标记废弃
 
 ### P1:前端 ProfileSection 字段灵活化
 

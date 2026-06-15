@@ -3,11 +3,15 @@ title: "升级 neuromem SDK 0.9.4 → 0.12.1"
 type: todo
 status: open
 priority: high
+on_hold: true
+on_hold_since: "2026-06-15"
 created_at: 2026-05-13T11:55:00
-updated_at: 2026-05-13T11:55:00
+updated_at: 2026-06-15T12:00:00+08:00
 ---
 
 # 升级 neuromem SDK 0.9.4 → 0.12.1
+
+> ⏸️ **2026-06-15 用户主动暂缓 (on hold)**: 用户集中力量先推进 NeuroMem SDK + neuromem-cloud, Me2 短期不推进、不主动提醒。**重启条件**: 用户主动重提 Me2。**重启时先刷新目标版本**: 0.12.1 已过时, SDK 当前 0.13.2 (cloud 已 `>=0.13.2`), 跨度含 0.13.0 删 P-B + 0.13.2 pending 驱动调度, 重启时需把目标改 0.13.2 并重评破坏性变更清单。
 
 ## 触发来源
 

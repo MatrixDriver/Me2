@@ -1,10 +1,12 @@
 ---
 title: "清理 insight 概念残留:全栈重命名为 trait"
 type: todo
-status: open
+status: archived
 priority: high
 created_at: 2026-03-08T10:00:00
-updated_at: 2026-05-22T15:05:00
+updated_at: 2026-06-14T00:00:00+08:00
+archived_at: 2026-06-14T00:00:00+08:00
+merged_into: D:/CODE/me2/rpiv/todo/v2-profile-alignment.md
 related:
   - D:/CODE/me2/rpiv/todo/todo-sdk-upgrade-0.12.1.md
   - D:/CODE/me2/rpiv/todo/v2-profile-alignment.md
@@ -75,3 +77,9 @@ SDK 的 `digest()` 公共 API 返回值完成重命名后, Me2 需同步适配�
 
 grep 全项目 `insights_used / insight.*洞察 / allowedTypes.*insight` 命中 25+ 文件, 无任何子任务已完成,
 状态与 2026-03-08 创建时一致。Me2 在过去 2.5 个月没有推进此 todo, 但产品仍可运行 (因为 insight 字段恒为 0, 死代码不影响功能)。
+
+## 归档原因 (2026-06-14)
+
+**合并入 [v2-profile-alignment.md](v2-profile-alignment.md)** — 本 todo 是 v2-profile-alignment 的**真子集**(正文 §"与 v2-profile-alignment 合并执行"已自陈), M3-M6 完全重叠。SDK 升级后两者一次性合并执行, 避免重复 grep/测试。本文件归档, 由 v2-profile-alignment 统一推进。三个 Me2 todo 的根 blocker `todo-sdk-upgrade-0.12.1` (仍 `neuromem==0.9.4`) 尚未推进, 不影响本归档决定。
+
+**过时描述修正**: 上文「2026-05-22 验证结论」称 `insights_used` "恒为 0、死代码" 已**不准确** —— `backend/app/api/v1/chat.py:301/357/553` 现已从 `msg.meta.get("insights_count")` 实际读取填充, 该字段不再纯属死代码。重命名/废弃时需一并处理这些读取点。此修正已同步到 v2-profile-alignment 的 M6 说明。
